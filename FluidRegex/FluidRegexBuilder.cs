@@ -35,7 +35,7 @@ namespace FluidRegex
             return this;
         }
 
-        public FluidRegexBuilder MatchTheCharachter(string charachter, RegexQuantifierType? quantifierType)
+        public FluidRegexBuilder MatchTheCharachter(string charachter, RegexQuantifierType? quantifierType = RegexQuantifierType.Once)
         {
             //Add the checks for escape chars
             CurrentRegexExpression += charachter;

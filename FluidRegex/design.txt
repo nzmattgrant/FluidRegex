@@ -1,0 +1,28 @@
+﻿translated to fluid C# email matcher
+^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$
+
+DefineRegexAs()
+.MatchFromStartAndEnd()
+.ThenMatchWord(RegexQuantifierType.MatchOneOrMoreTimes)
+.ThenStartGroup()
+.ThenMatchCustom("-+.'")
+.ThenMatchWord(RegexQuantifierType.MatchOneOrMoreTimes)
+.EndGroup()
+.ThenCreateGroup(preMadeRegexGroupWithCatchyName)
+
+Note sequence is super important here
+It is hard to deal with groups in a readable way because you have to start then end
+Maybe i should just pass in a regex group that way groups could be reusable as well
+
+MatchStringStart()
+.matchAnythingButWhiteSpace
+.matchGroup(
+	DefineRegexGroupAs blah, RegexQuantifierType.MatchManyTimes
+)
+.matchTheCharachter("@")
+.matchAnythingButWhitespace
+.matchGroup(DefineRegexGroupAs()
+	.matchOneOfTheseCharachters("-",".")
+	.matchAnythingButWhitespace(), 
+	RegexQuantifierType.MatchManyTimes
+)
