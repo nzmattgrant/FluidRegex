@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -23,6 +24,11 @@ namespace FluidRegex
             return this;
         }
 
+        public FluidRegexBuilder MatchStringStart() {
+            CurrentRegexExpression += "^";
+            return this;
+        }
+
         public FluidRegexBuilder MatchDigits(RegexQuantifierType quantifierType)
         {
             CurrentRegexExpression += "+d";
@@ -41,6 +47,13 @@ namespace FluidRegex
             CurrentRegexExpression += charachter;
             return this;
         }
+
+        public FluidRegexBuilder MatchOneOfTheseCharachters(RegexQuantifierType quantifierType = RegexQuantifierType.Once, params string[] stringsToMatch) {
+            //Add the checks for escape chars
+            CurrentRegexExpression += "[" + string.Join("", stringsToMatch) + "]" + getQuantifierStringFromQuantifierType(quantifierType);
+            return this;
+        }
+        
 
         public FluidRegexBuilder MatchCustom(string customMatch)
         {
@@ -63,6 +76,23 @@ namespace FluidRegex
         public Regex CreateInstance()
         {
             return new Regex(CurrentRegexExpression);
+        }
+
+        private string getQuantifierStringFromQuantifierType(RegexQuantifierType regexQuantifierType)
+        {
+            switch (regexQuantifierType)
+            {
+                case RegexQuantifierType.Once:
+                    return "";
+                case RegexQuantifierType.OnceOrNone:
+                    return "?";
+                case RegexQuantifierType.OneOrMore:
+                    return "+";
+                case RegexQuantifierType.ZeroOrMore:
+                    return "*";
+                default:
+                    return null;
+            }
         }
     }
 }

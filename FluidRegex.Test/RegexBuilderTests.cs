@@ -65,5 +65,80 @@ namespace FluidRegex.Test
             Assert.IsFalse(builtRegex.IsMatch(" "));
 
         }
+
+
+        [TestMethod]
+        public void Match_One_Of_These_Charachters_Matches_Charachters() {
+            var regex = "^start";
+            var builder = new FluidRegexBuilder()
+                .MatchStringStart()
+                .MatchOneOfTheseCharachters();
+            var builtRegex = builder.CreateInstance();
+            var builtRegexString = builder
+                .CreateInstanceAsString();
+            Assert.AreEqual(regex, builtRegexString);
+            Assert.IsFalse(builtRegex.IsMatch("astart"));
+            Assert.IsFalse(builtRegex.IsMatch(" start"));
+            Assert.IsFalse(builtRegex.IsMatch("aaaaaastart start"));
+            Assert.IsFalse(builtRegex.IsMatch(" "));
+            Assert.IsFalse(builtRegex.IsMatch("aaa"));
+            Assert.IsTrue(builtRegex.IsMatch("start of the string"));
+
+        }
+
+        [TestMethod]
+        public void Match_Start_String_Only_Matches_Start_Of_String() {
+            var regex = "^start";
+            var builder = new FluidRegexBuilder()
+                .MatchStringStart()
+                .MatchTheCharachter("start");
+            var builtRegex = builder.CreateInstance();
+            var builtRegexString = builder
+                .CreateInstanceAsString();
+            Assert.AreEqual(regex, builtRegexString);
+            Assert.IsFalse(builtRegex.IsMatch("astart"));
+            Assert.IsFalse(builtRegex.IsMatch(" start"));
+            Assert.IsFalse(builtRegex.IsMatch("aaaaaastart start"));
+            Assert.IsFalse(builtRegex.IsMatch(" "));
+            Assert.IsFalse(builtRegex.IsMatch("aaa"));
+            Assert.IsTrue(builtRegex.IsMatch("start of the string"));
+
+        }
+
+        [TestMethod]
+        public void Match_One_Of_These_Charachters_Matches_Right_Charatchers() {
+            var regex = "[-+.']";
+            var builder = new FluidRegexBuilder()
+                .MatchOneOfTheseCharachters(RegexQuantifierType.Once, "-", "+", ".", "'");
+            var builtRegex = builder.CreateInstance();
+            var builtRegexString = builder
+                .CreateInstanceAsString();
+            Assert.AreEqual(regex, builtRegexString);
+            Assert.IsTrue(builtRegex.IsMatch("-"));
+            Assert.IsTrue(builtRegex.IsMatch(" blah+blah"));
+            Assert.IsTrue(builtRegex.IsMatch("-.start"));
+            Assert.IsTrue(builtRegex.IsMatch("..."));
+            Assert.IsTrue(builtRegex.IsMatch("'ahhh'"));
+            Assert.IsTrue(builtRegex.IsMatch("start of the string..."));
+
+        }
+
+        [TestMethod]
+        public void Match_One_Of_These_Charachters_Fails_On_No_Match_Strings() {
+            var regex = "[-+.']";
+            var builder = new FluidRegexBuilder()
+                .MatchOneOfTheseCharachters(RegexQuantifierType.Once, "-", "+", ".", "'");
+            var builtRegex = builder.CreateInstance();
+            var builtRegexString = builder
+                .CreateInstanceAsString();
+            Assert.AreEqual(regex, builtRegexString);
+            Assert.IsFalse(builtRegex.IsMatch(" "));
+            Assert.IsFalse(builtRegex.IsMatch(" blah blah"));
+            Assert.IsFalse(builtRegex.IsMatch("start"));
+            Assert.IsFalse(builtRegex.IsMatch("///"));
+            Assert.IsFalse(builtRegex.IsMatch("ahhh"));
+            Assert.IsFalse(builtRegex.IsMatch("start of the string"));
+
+        }
     }
 }
