@@ -69,10 +69,10 @@ namespace FluidRegex.Test
 
         [TestMethod]
         public void Match_One_Of_These_Charachters_Matches_Charachters() {
-            var regex = "^start";
+            var regex = "^[sz]";
             var builder = new FluidRegexBuilder()
                 .MatchStringStart()
-                .MatchOneOfTheseCharachters();
+                .MatchOneOfTheseCharachters(RegexQuantifierType.Once, "s", "z");
             var builtRegex = builder.CreateInstance();
             var builtRegexString = builder
                 .CreateInstanceAsString();
@@ -83,7 +83,7 @@ namespace FluidRegex.Test
             Assert.IsFalse(builtRegex.IsMatch(" "));
             Assert.IsFalse(builtRegex.IsMatch("aaa"));
             Assert.IsTrue(builtRegex.IsMatch("start of the string"));
-
+            Assert.IsTrue(builtRegex.IsMatch("ztart of the string"));
         }
 
         [TestMethod]

@@ -45,7 +45,9 @@
   <ItemGroup>
     <Compile Include="Enums.cs" />
     <Compile Include="FluidRegexBuilder.cs" />
+    <Compile Include="FluidRegexBuilderBase.cs" />
     <Compile Include="FluidRegexFactory.cs" />
+    <Compile Include="FluidRegexGroupBuilder.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RegexNode.cs" />
