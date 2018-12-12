@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,11 +12,37 @@ namespace FluidRegex
 
     }
 
-    public enum RegexQuantifierType
+    public enum NumberOfTimes
     {
+        /// <summary>
+        /// No quantifier symbol, match once, non optional
+        /// </summary>
+        [Description("")]
         Once,
+        /// <summary>
+        /// +
+        /// </summary>
+        [Description("+")]
         OneOrMore,
+        /// <summary>
+        /// *
+        /// </summary>
+        [Description("*")]
         ZeroOrMore,
-        OnceOrNone
+        /// <summary>
+        /// ?
+        /// </summary>
+        [Description("?")]
+        OnceOptional,
+        /// <summary>
+        /// +?
+        /// </summary>
+        [Description("+?")]
+        OneOrMoreOptional,
+        /// <summary>
+        /// *?
+        /// </summary>
+        [Description("*?")]
+        ZeroOrMoreOptional
     }
 }

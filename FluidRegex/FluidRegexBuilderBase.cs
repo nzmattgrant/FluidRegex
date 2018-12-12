@@ -24,23 +24,33 @@ namespace FluidRegex {
             return GetThisAsOriginalType();
         }
 
-        public T MatchDigits(RegexQuantifierType quantifierType) {
+        public T MatchWhitespace(NumberOfTimes quantifierType) {
+            CurrentRegexExpression += "\\W" + GetQuantifierStringFromQuantifierType(quantifierType); ;
+            return GetThisAsOriginalType();
+        }
+
+        public T MatchDigits(NumberOfTimes quantifierType) {
             CurrentRegexExpression += "+d";
             return GetThisAsOriginalType();
         }
 
-        public T MatchAnythingButWhiteSpace(RegexQuantifierType? quantifierType) {
+        public T MatchAnythingButWhiteSpace(NumberOfTimes? quantifierType) {
             CurrentRegexExpression += @"\w";
             return GetThisAsOriginalType();
         }
 
-        public T MatchTheCharachter(string charachter, RegexQuantifierType? quantifierType = RegexQuantifierType.Once) {
+        public T MatchAnyWords(NumberOfTimes? quantifierType) {
+            CurrentRegexExpression += @"\w";
+            return GetThisAsOriginalType();
+        }
+
+        public T MatchTheCharachter(string charachter, NumberOfTimes? quantifierType = NumberOfTimes.Once) {
             //Add the checks for escape chars
             CurrentRegexExpression += charachter;
             return GetThisAsOriginalType();
         }
 
-        public T MatchOneOfTheseCharachters(RegexQuantifierType quantifierType = RegexQuantifierType.Once, params string[] stringsToMatch) {
+        public T MatchOneOfTheseCharachters(NumberOfTimes quantifierType = NumberOfTimes.Once, params string[] stringsToMatch) {
             //Add the checks for escape chars
             CurrentRegexExpression += "[" + string.Join("", stringsToMatch) + "]" + GetQuantifierStringFromQuantifierType(quantifierType);
             return GetThisAsOriginalType();
@@ -66,15 +76,15 @@ namespace FluidRegex {
             return new Regex(CurrentRegexExpression);
         }
 
-        protected string GetQuantifierStringFromQuantifierType(RegexQuantifierType regexQuantifierType) {
+        protected string GetQuantifierStringFromQuantifierType(NumberOfTimes regexQuantifierType) {
             switch (regexQuantifierType) {
-                case RegexQuantifierType.Once:
+                case NumberOfTimes.Once:
                     return "";
-                case RegexQuantifierType.OnceOrNone:
+                case NumberOfTimes.OnceOrNone:
                     return "?";
-                case RegexQuantifierType.OneOrMore:
+                case NumberOfTimes.OneOrMore:
                     return "+";
-                case RegexQuantifierType.ZeroOrMore:
+                case NumberOfTimes.ZeroOrMore:
                     return "*";
                 default:
                     return null;

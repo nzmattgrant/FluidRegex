@@ -10,11 +10,11 @@ namespace FluidRegex
 {
     public class FluidRegexBuilder : FluidRegexBuilderBase<FluidRegexBuilder>
     {
-        public FluidRegexBuilder MatchGroup(FluidRegexGroupBuilder regexGroup, RegexQuantifierType quantifierType = RegexQuantifierType.Once) {
+        public FluidRegexBuilder MatchGroup(FluidRegexGroupBuilder regexGroup, NumberOfTimes quantifierType = NumberOfTimes.Once) {
             return MatchGroup(regexGroup.CreateInstanceAsString());
         }
 
-        public FluidRegexBuilder MatchGroup(string regexGroupString, RegexQuantifierType quantifierType = RegexQuantifierType.Once) {
+        public FluidRegexBuilder MatchGroup(string regexGroupString, NumberOfTimes quantifierType = NumberOfTimes.Once) {
             CurrentRegexExpression = CurrentRegexExpression + "(" + regexGroupString + ")" + GetQuantifierStringFromQuantifierType(quantifierType);
             return this;
         }

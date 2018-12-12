@@ -11,7 +11,7 @@ namespace FluidRegex.Test
         {
             var regex = @"\w";
             var builder = new FluidRegexBuilder()
-                .MatchAnythingButWhiteSpace(RegexQuantifierType.Once);
+                .MatchAnythingButWhiteSpace(NumberOfTimes.Once);
             var builtRegex = builder.CreateInstance();
             var builtRegexString = builder
                 .CreateInstanceAsString();
@@ -23,7 +23,7 @@ namespace FluidRegex.Test
         public void Match_Everything_But_Whitespace_Matches_Non_White_Space() {
             var regex = @"\w";
             var builder = new FluidRegexBuilder()
-                .MatchAnythingButWhiteSpace(RegexQuantifierType.Once);
+                .MatchAnythingButWhiteSpace(NumberOfTimes.Once);
             var builtRegex = builder.CreateInstance();
             var builtRegexString = builder
                 .CreateInstanceAsString();
@@ -72,7 +72,7 @@ namespace FluidRegex.Test
             var regex = "^[sz]";
             var builder = new FluidRegexBuilder()
                 .MatchStringStart()
-                .MatchOneOfTheseCharachters(RegexQuantifierType.Once, "s", "z");
+                .MatchOneOfTheseCharachters(NumberOfTimes.Once, "s", "z");
             var builtRegex = builder.CreateInstance();
             var builtRegexString = builder
                 .CreateInstanceAsString();
@@ -109,7 +109,7 @@ namespace FluidRegex.Test
         public void Match_One_Of_These_Charachters_Matches_Right_Charatchers() {
             var regex = "[-+.']";
             var builder = new FluidRegexBuilder()
-                .MatchOneOfTheseCharachters(RegexQuantifierType.Once, "-", "+", ".", "'");
+                .MatchOneOfTheseCharachters(NumberOfTimes.Once, "-", "+", ".", "'");
             var builtRegex = builder.CreateInstance();
             var builtRegexString = builder
                 .CreateInstanceAsString();
@@ -127,7 +127,7 @@ namespace FluidRegex.Test
         public void Match_One_Of_These_Charachters_Fails_On_No_Match_Strings() {
             var regex = "[-+.']";
             var builder = new FluidRegexBuilder()
-                .MatchOneOfTheseCharachters(RegexQuantifierType.Once, "-", "+", ".", "'");
+                .MatchOneOfTheseCharachters(NumberOfTimes.Once, "-", "+", ".", "'");
             var builtRegex = builder.CreateInstance();
             var builtRegexString = builder
                 .CreateInstanceAsString();
@@ -139,6 +139,34 @@ namespace FluidRegex.Test
             Assert.IsFalse(builtRegex.IsMatch("ahhh"));
             Assert.IsFalse(builtRegex.IsMatch("start of the string"));
 
+        }
+
+        public void Test_Design_Example()
+        {
+            //match this bad boy
+            //^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$
+
+            var charachterGroup = new FluidRegexGroupBuilder()
+                .MatchOneOfTheseCharachters(NumberOfTimes.Once, "-", "+", ".", "'")
+                .MatchAnyWords(NumberOfTimes.OneOrMore);
+
+            //Idea about a refactor (think about this later)
+            //new RegexMatcher().Match().WhiteSpace().ThenGroup().ThenTheCharchater
+
+            var builder = new FluidRegexBuilder()
+                .MatchStringStart()
+                .MatchAnyWords(NumberOfTimes.OneOrMore)
+                .MatchGroup(
+                    charachterGroup, NumberOfTimes.ZeroOrMore
+                )
+                .MatchOneOfTheseCharachters(NumberOfTimes.Once, "@");
+            //.matchTheCharachter("@")
+            //.matchAnythingButWhitespace
+            //.matchGroup(DefineRegexGroupAs()
+            //        .matchOneOfTheseCharachters("-", ".")
+            //        .matchAnythingButWhitespace(),
+            //    RegexQuantifierType.MatchManyTimes
+            //)
         }
     }
 }
