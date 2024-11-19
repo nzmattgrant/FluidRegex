@@ -12,9 +12,9 @@ namespace FluidRegex.Test
             var regex = @"\w";
             var builder = new FluidRegexBuilder()
                 .MatchAnythingButWhiteSpace(NumberOfTimes.Once);
-            var builtRegex = builder.CreateInstance();
+            var builtRegex = builder.GetRegex();
             var builtRegexString = builder
-                .CreateInstanceAsString();
+                .ToString();
             Assert.AreEqual(regex, builtRegexString);
             Assert.IsFalse(builtRegex.IsMatch(" "));
         }
@@ -24,9 +24,9 @@ namespace FluidRegex.Test
             var regex = @"\w";
             var builder = new FluidRegexBuilder()
                 .MatchAnythingButWhiteSpace(NumberOfTimes.Once);
-            var builtRegex = builder.CreateInstance();
+            var builtRegex = builder.GetRegex();
             var builtRegexString = builder
-                .CreateInstanceAsString();
+                .ToString();
             Assert.AreEqual(regex, builtRegexString);
             Assert.IsTrue(builtRegex.IsMatch("hello"));
             Assert.IsTrue(builtRegex.IsMatch("$$$fadg"));
@@ -35,13 +35,14 @@ namespace FluidRegex.Test
         }
 
         [TestMethod]
-        public void Match_The_Charachter_Matches_Charatcher() {
-            var regex = "@";
+        public void Match_The_Charachter_Matches_Charatcher()
+        {
+            var regex = '@';
             var builder = new FluidRegexBuilder()
-                .MatchTheCharachter(regex);
-            var builtRegex = builder.CreateInstance();
+                .MatchTheCharachters(NumberOfTimes.Once, regex);
+            var builtRegex = builder.GetRegex();
             var builtRegexString = builder
-                .CreateInstanceAsString();
+                .ToString();
             Assert.AreEqual(regex, builtRegexString);
             Assert.IsTrue(builtRegex.IsMatch("a@a.a"));
             Assert.IsTrue(builtRegex.IsMatch("a@a@a@"));
@@ -52,18 +53,17 @@ namespace FluidRegex.Test
 
         [TestMethod]
         public void Match_The_Charachter_Does_Not_Match_Other_Charatchers() {
-            var regex = "@";
+            var regex = '@';
             var builder = new FluidRegexBuilder()
-                .MatchTheCharachter(regex);
-            var builtRegex = builder.CreateInstance();
+                .MatchTheCharachters(NumberOfTimes.Once, regex);
+            var builtRegex = builder.GetRegex();
             var builtRegexString = builder
-                .CreateInstanceAsString();
+                .ToString();
             Assert.AreEqual(regex, builtRegexString);
             Assert.IsFalse(builtRegex.IsMatch("a"));
             Assert.IsFalse(builtRegex.IsMatch("aaaaaa..dfalkj343"));
             Assert.IsFalse(builtRegex.IsMatch("#^%&$"));
             Assert.IsFalse(builtRegex.IsMatch(" "));
-
         }
 
 
@@ -73,9 +73,8 @@ namespace FluidRegex.Test
             var builder = new FluidRegexBuilder()
                 .MatchStringStart()
                 .MatchOneOfTheseCharachters(NumberOfTimes.Once, "s", "z");
-            var builtRegex = builder.CreateInstance();
-            var builtRegexString = builder
-                .CreateInstanceAsString();
+            var builtRegex = builder.GetRegex();
+            var builtRegexString = builder.ToString();
             Assert.AreEqual(regex, builtRegexString);
             Assert.IsFalse(builtRegex.IsMatch("astart"));
             Assert.IsFalse(builtRegex.IsMatch(" start"));
@@ -91,10 +90,10 @@ namespace FluidRegex.Test
             var regex = "^start";
             var builder = new FluidRegexBuilder()
                 .MatchStringStart()
-                .MatchTheCharachter("start");
-            var builtRegex = builder.CreateInstance();
+                .MatchTheSubstring("start");
+            var builtRegex = builder.GetRegex();
             var builtRegexString = builder
-                .CreateInstanceAsString();
+                .ToString();
             Assert.AreEqual(regex, builtRegexString);
             Assert.IsFalse(builtRegex.IsMatch("astart"));
             Assert.IsFalse(builtRegex.IsMatch(" start"));
@@ -110,9 +109,9 @@ namespace FluidRegex.Test
             var regex = "[-+.']";
             var builder = new FluidRegexBuilder()
                 .MatchOneOfTheseCharachters(NumberOfTimes.Once, "-", "+", ".", "'");
-            var builtRegex = builder.CreateInstance();
+            var builtRegex = builder.GetRegex();
             var builtRegexString = builder
-                .CreateInstanceAsString();
+                .ToString();
             Assert.AreEqual(regex, builtRegexString);
             Assert.IsTrue(builtRegex.IsMatch("-"));
             Assert.IsTrue(builtRegex.IsMatch(" blah+blah"));
@@ -128,9 +127,9 @@ namespace FluidRegex.Test
             var regex = "[-+.']";
             var builder = new FluidRegexBuilder()
                 .MatchOneOfTheseCharachters(NumberOfTimes.Once, "-", "+", ".", "'");
-            var builtRegex = builder.CreateInstance();
+            var builtRegex = builder.GetRegex();
             var builtRegexString = builder
-                .CreateInstanceAsString();
+                .ToString();
             Assert.AreEqual(regex, builtRegexString);
             Assert.IsFalse(builtRegex.IsMatch(" "));
             Assert.IsFalse(builtRegex.IsMatch(" blah blah"));
@@ -141,32 +140,42 @@ namespace FluidRegex.Test
 
         }
 
+        [TestMethod]
         public void Test_Design_Example()
         {
             //match this bad boy
             //^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$
 
-            var charachterGroup = new FluidRegexGroupBuilder()
+            var regexToTest = "^\\w+([-+.']\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*$";
+
+            var wordsWithAllowedStartSymbols = new FluidRegexGroupBuilder()
                 .MatchOneOfTheseCharachters(NumberOfTimes.Once, "-", "+", ".", "'")
-                .MatchAnyWords(NumberOfTimes.OneOrMore);
+                .MatchAnyLettersOrNumbers(NumberOfTimes.OneOrMore);
 
             //Idea about a refactor (think about this later)
             //new RegexMatcher().Match().WhiteSpace().ThenGroup().ThenTheCharchater
 
+            var wordsWithHyphenAndDots = new FluidRegexGroupBuilder()
+                .MatchOneOfTheseCharachters(NumberOfTimes.Once, "-", ".")
+                .MatchAnyLettersOrNumbers(NumberOfTimes.OneOrMore);
+
             var builder = new FluidRegexBuilder()
                 .MatchStringStart()
-                .MatchAnyWords(NumberOfTimes.OneOrMore)
-                .MatchGroup(
-                    charachterGroup, NumberOfTimes.ZeroOrMore
-                )
-                .MatchOneOfTheseCharachters(NumberOfTimes.Once, "@");
-            //.matchTheCharachter("@")
-            //.matchAnythingButWhitespace
-            //.matchGroup(DefineRegexGroupAs()
-            //        .matchOneOfTheseCharachters("-", ".")
-            //        .matchAnythingButWhitespace(),
-            //    RegexQuantifierType.MatchManyTimes
-            //)
+                .MatchAnyLettersOrNumbers(NumberOfTimes.OneOrMore)
+                .MatchGroup(wordsWithAllowedStartSymbols, NumberOfTimes.ZeroOrMore)
+                .MatchTheCharachter('@')
+                .MatchAnyLettersOrNumbers(NumberOfTimes.OneOrMore)
+                .MatchGroup(wordsWithHyphenAndDots, NumberOfTimes.ZeroOrMore)
+                .MatchTheCharachter('.')
+                .MatchAnyLettersOrNumbers(NumberOfTimes.OneOrMore)
+                .MatchGroup(wordsWithHyphenAndDots,NumberOfTimes.ZeroOrMore)
+                .MatchStringEnd();
+
+            var endResultString = builder.ToString();
+            Console.WriteLine(endResultString);
+            Assert.AreEqual(regexToTest, endResultString);
+
+
         }
     }
 }

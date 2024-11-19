@@ -24,6 +24,12 @@ namespace FluidRegex {
             return GetThisAsOriginalType();
         }
 
+        public T MatchStringEnd()
+        {
+            CurrentRegexExpression += "$";
+            return GetThisAsOriginalType();
+        }
+
         public T MatchWhitespace(NumberOfTimes quantifierType) {
             CurrentRegexExpression += "\\W" + GetQuantifierStringFromQuantifierType(quantifierType); ;
             return GetThisAsOriginalType();
@@ -34,19 +40,30 @@ namespace FluidRegex {
             return GetThisAsOriginalType();
         }
 
-        public T MatchAnythingButWhiteSpace(NumberOfTimes? quantifierType) {
-            CurrentRegexExpression += @"\w";
+        public T MatchAnythingButWhiteSpace(NumberOfTimes quantifierType = NumberOfTimes.Once) {
+            CurrentRegexExpression += @"\w" + GetQuantifierStringFromQuantifierType(quantifierType);
             return GetThisAsOriginalType();
         }
 
-        public T MatchAnyWords(NumberOfTimes? quantifierType) {
-            CurrentRegexExpression += @"\w";
+        public T MatchAnyLettersOrNumbers(NumberOfTimes quantifierType = NumberOfTimes.Once) {
+            CurrentRegexExpression += @"\w" + GetQuantifierStringFromQuantifierType(quantifierType);
             return GetThisAsOriginalType();
         }
 
-        public T MatchTheCharachter(string charachter, NumberOfTimes? quantifierType = NumberOfTimes.Once) {
-            //Add the checks for escape chars
-            CurrentRegexExpression += charachter;
+        public T MatchTheCharachter(char charachter, NumberOfTimes quantifierType = NumberOfTimes.Once)
+        {
+            CurrentRegexExpression += EscapeCharachters(new []{ charachter })[0] + GetQuantifierStringFromQuantifierType(quantifierType);
+            return GetThisAsOriginalType();
+        }
+
+        public T MatchTheCharachters(NumberOfTimes quantifierType = NumberOfTimes.Once, params char[] charachters) {
+            CurrentRegexExpression += string.Join("", EscapeCharachters(charachters) + GetQuantifierStringFromQuantifierType(quantifierType));
+            return GetThisAsOriginalType();
+        }
+
+        public T MatchTheSubstring(string substring, NumberOfTimes quantifierType = NumberOfTimes.Once)
+        {
+            CurrentRegexExpression += substring + GetQuantifierStringFromQuantifierType(quantifierType);
             return GetThisAsOriginalType();
         }
 
@@ -68,11 +85,11 @@ namespace FluidRegex {
             return GetThisAsOriginalType();
         }
 
-        public string CreateInstanceAsString() {
+        public override string ToString() {
             return CurrentRegexExpression;
         }
 
-        public Regex CreateInstance() {
+        public Regex GetRegex() {
             return new Regex(CurrentRegexExpression);
         }
 
@@ -89,6 +106,23 @@ namespace FluidRegex {
                 default:
                     return null;
             }
+        }
+
+        public string[] EscapeCharachters(char[] chararchters)
+        {
+            string[] escapedCharachters = new string[chararchters.Length];
+            for (var i = 0; i < chararchters.Length; i++)
+            {
+                if (chararchters[i] == '.')
+                {
+                    escapedCharachters[i] = $"\\.";
+                    continue;
+                }
+
+                escapedCharachters[i] = chararchters[i].ToString();
+            }
+            return escapedCharachters;
+
         }
     }
 }

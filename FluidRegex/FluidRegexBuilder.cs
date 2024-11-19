@@ -11,7 +11,7 @@ namespace FluidRegex
     public class FluidRegexBuilder : FluidRegexBuilderBase<FluidRegexBuilder>
     {
         public FluidRegexBuilder MatchGroup(FluidRegexGroupBuilder regexGroup, NumberOfTimes quantifierType = NumberOfTimes.Once) {
-            return MatchGroup(regexGroup.CreateInstanceAsString());
+            return MatchGroup(regexGroup.ToString(), quantifierType);
         }
 
         public FluidRegexBuilder MatchGroup(string regexGroupString, NumberOfTimes quantifierType = NumberOfTimes.Once) {

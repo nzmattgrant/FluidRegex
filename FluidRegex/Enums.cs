@@ -33,7 +33,7 @@ namespace FluidRegex
         /// ?
         /// </summary>
         [Description("?")]
-        OnceOptional,
+        OnceOrNone,
         /// <summary>
         /// +?
         /// </summary>
