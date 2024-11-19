@@ -52,19 +52,29 @@ namespace FluidRegex {
 
         public T MatchTheCharacter(char charachter, NumberOfTimes quantifierType = NumberOfTimes.Once)
         {
-            CurrentRegexExpression += EscapeCharachters(new []{ charachter })[0] + GetQuantifierStringFromQuantifierType(quantifierType);
+            CurrentRegexExpression += EscapeCharacters(new []{ charachter })[0] + GetQuantifierStringFromQuantifierType(quantifierType);
             return GetThisAsOriginalType();
         }
 
         public T MatchTheCharachters(NumberOfTimes quantifierType = NumberOfTimes.Once, params char[] charachters) {
-            CurrentRegexExpression += string.Join("", EscapeCharachters(charachters) + GetQuantifierStringFromQuantifierType(quantifierType));
+            CurrentRegexExpression += string.Join("", EscapeCharacters(charachters) + GetQuantifierStringFromQuantifierType(quantifierType));
             return GetThisAsOriginalType();
         }
 
         public T MatchTheSubstring(string substring, NumberOfTimes quantifierType = NumberOfTimes.Once)
         {
-            CurrentRegexExpression += substring + GetQuantifierStringFromQuantifierType(quantifierType);
+            CurrentRegexExpression += EscapeSpecialCharacters(substring) + GetQuantifierStringFromQuantifierType(quantifierType);
             return GetThisAsOriginalType();
+        }
+
+        private string EscapeSpecialCharacters(string stringToEscape)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var t in stringToEscape)
+            {
+                sb.Append(EscapeCharacters(new[] {t}));
+            }
+            return sb.ToString();
         }
 
         public T MatchOneOfTheseCharacters(NumberOfTimes quantifierType = NumberOfTimes.Once, params string[] stringsToMatch) {
@@ -108,25 +118,25 @@ namespace FluidRegex {
             }
         }
 
-        public string[] EscapeCharachters(char[] chararchters)
+        public string[] EscapeCharacters(char[] characters)
         {
-            string[] escapedCharachters = new string[chararchters.Length];
-            for (var i = 0; i < chararchters.Length; i++)
+            string[] escapedCharacters = new string[characters.Length];
+            for (var i = 0; i < characters.Length; i++)
             {
-                if (chararchters[i] == '.')
+                if (characters[i] == '.')
                 {
-                    escapedCharachters[i] = $"\\.";
+                    escapedCharacters[i] = $"\\.";
                     continue;
                 }
-                if (chararchters[i] == '/')
+                if (characters[i] == '/')
                 {
-                    escapedCharachters[i] = $"\\/";
+                    escapedCharacters[i] = $"\\/";
                     continue;
                 }
 
-                escapedCharachters[i] = chararchters[i].ToString();
+                escapedCharacters[i] = characters[i].ToString();
             }
-            return escapedCharachters;
+            return escapedCharacters;
 
         }
     }
