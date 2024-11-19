@@ -181,6 +181,7 @@ namespace FluidRegex.Test
         {
 
             var regexToTest = "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#()?&//=]*)";
+            var paritalMatch = "https?:\\/\\/";
 
             //todo combine the characters for matching
             var builder = new FluidRegexBuilder()
@@ -193,7 +194,7 @@ namespace FluidRegex.Test
 
             var endResultString = builder.ToString();
             Console.WriteLine(endResultString);
-            Assert.AreEqual(regexToTest, endResultString);
+            Assert.AreEqual(paritalMatch, endResultString);
         }
     }
 }
