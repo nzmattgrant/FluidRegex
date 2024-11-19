@@ -72,7 +72,7 @@ namespace FluidRegex.Test
             var regex = "^[sz]";
             var builder = new FluidRegexBuilder()
                 .MatchStringStart()
-                .MatchOneOfTheseCharachters(NumberOfTimes.Once, "s", "z");
+                .MatchOneOfTheseCharacters(NumberOfTimes.Once, "s", "z");
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder.ToString();
             Assert.AreEqual(regex, builtRegexString);
@@ -108,7 +108,7 @@ namespace FluidRegex.Test
         public void Match_One_Of_These_Charachters_Matches_Right_Charatchers() {
             var regex = "[-+.']";
             var builder = new FluidRegexBuilder()
-                .MatchOneOfTheseCharachters(NumberOfTimes.Once, "-", "+", ".", "'");
+                .MatchOneOfTheseCharacters(NumberOfTimes.Once, "-", "+", ".", "'");
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder
                 .ToString();
@@ -126,7 +126,7 @@ namespace FluidRegex.Test
         public void Match_One_Of_These_Charachters_Fails_On_No_Match_Strings() {
             var regex = "[-+.']";
             var builder = new FluidRegexBuilder()
-                .MatchOneOfTheseCharachters(NumberOfTimes.Once, "-", "+", ".", "'");
+                .MatchOneOfTheseCharacters(NumberOfTimes.Once, "-", "+", ".", "'");
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder
                 .ToString();
@@ -149,24 +149,24 @@ namespace FluidRegex.Test
             var regexToTest = "^\\w+([-+.']\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*$";
 
             var wordsWithAllowedStartSymbols = new FluidRegexGroupBuilder()
-                .MatchOneOfTheseCharachters(NumberOfTimes.Once, "-", "+", ".", "'")
+                .MatchOneOfTheseCharacters(NumberOfTimes.Once, "-", "+", ".", "'")
                 .MatchAnyLettersOrNumbers(NumberOfTimes.OneOrMore);
 
             //Idea about a refactor (think about this later)
             //new RegexMatcher().Match().WhiteSpace().ThenGroup().ThenTheCharchater
 
             var wordsWithHyphenAndDots = new FluidRegexGroupBuilder()
-                .MatchOneOfTheseCharachters(NumberOfTimes.Once, "-", ".")
+                .MatchOneOfTheseCharacters(NumberOfTimes.Once, "-", ".")
                 .MatchAnyLettersOrNumbers(NumberOfTimes.OneOrMore);
 
             var builder = new FluidRegexBuilder()
                 .MatchStringStart()
                 .MatchAnyLettersOrNumbers(NumberOfTimes.OneOrMore)
                 .MatchGroup(wordsWithAllowedStartSymbols, NumberOfTimes.ZeroOrMore)
-                .MatchTheCharachter('@')
+                .MatchTheCharacter('@')
                 .MatchAnyLettersOrNumbers(NumberOfTimes.OneOrMore)
                 .MatchGroup(wordsWithHyphenAndDots, NumberOfTimes.ZeroOrMore)
-                .MatchTheCharachter('.')
+                .MatchTheCharacter('.')
                 .MatchAnyLettersOrNumbers(NumberOfTimes.OneOrMore)
                 .MatchGroup(wordsWithHyphenAndDots,NumberOfTimes.ZeroOrMore)
                 .MatchStringEnd();
@@ -174,8 +174,26 @@ namespace FluidRegex.Test
             var endResultString = builder.ToString();
             Console.WriteLine(endResultString);
             Assert.AreEqual(regexToTest, endResultString);
+        }
+
+        [TestMethod]
+        public void Test_URL_matcher()
+        {
+
+            var regexToTest = "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#()?&//=]*)";
+
+            //todo combine the characters for matching
+            var builder = new FluidRegexBuilder()
+                .MatchTheSubstring("http")
+                .MatchTheCharacter('s', NumberOfTimes.ZeroOrMore)
+                .MatchTheCharacter(':')
+                .MatchTheCharacter('/')
+                .MatchTheCharacter('/');
 
 
+            var endResultString = builder.ToString();
+            Console.WriteLine(endResultString);
+            Assert.AreEqual(regexToTest, endResultString);
         }
     }
 }

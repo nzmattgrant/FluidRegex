@@ -50,7 +50,7 @@ namespace FluidRegex {
             return GetThisAsOriginalType();
         }
 
-        public T MatchTheCharachter(char charachter, NumberOfTimes quantifierType = NumberOfTimes.Once)
+        public T MatchTheCharacter(char charachter, NumberOfTimes quantifierType = NumberOfTimes.Once)
         {
             CurrentRegexExpression += EscapeCharachters(new []{ charachter })[0] + GetQuantifierStringFromQuantifierType(quantifierType);
             return GetThisAsOriginalType();
@@ -67,7 +67,7 @@ namespace FluidRegex {
             return GetThisAsOriginalType();
         }
 
-        public T MatchOneOfTheseCharachters(NumberOfTimes quantifierType = NumberOfTimes.Once, params string[] stringsToMatch) {
+        public T MatchOneOfTheseCharacters(NumberOfTimes quantifierType = NumberOfTimes.Once, params string[] stringsToMatch) {
             //Add the checks for escape chars
             CurrentRegexExpression += "[" + string.Join("", stringsToMatch) + "]" + GetQuantifierStringFromQuantifierType(quantifierType);
             return GetThisAsOriginalType();
@@ -116,6 +116,11 @@ namespace FluidRegex {
                 if (chararchters[i] == '.')
                 {
                     escapedCharachters[i] = $"\\.";
+                    continue;
+                }
+                if (chararchters[i] == '/')
+                {
+                    escapedCharachters[i] = $"\\/";
                     continue;
                 }
 
