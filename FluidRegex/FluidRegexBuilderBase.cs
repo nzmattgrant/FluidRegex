@@ -50,9 +50,23 @@ namespace FluidRegex {
             return GetThisAsOriginalType();
         }
 
-        public T MatchTheCharacter(char charachter, NumberOfTimes quantifierType = NumberOfTimes.Once)
+        public T MatchTheCharacter(char character, NumberOfTimes quantifierType = NumberOfTimes.Once)
         {
-            CurrentRegexExpression += EscapeCharacters(new []{ charachter })[0] + GetQuantifierStringFromQuantifierType(quantifierType);
+            CurrentRegexExpression += EscapeCharacters(new []{ character })[0] + GetQuantifierStringFromQuantifierType(quantifierType);
+            return GetThisAsOriginalType();
+        }
+
+        public T MatchTheCharacter(string character, NumberOfTimes quantifierType = NumberOfTimes.Once)
+        {
+            try
+            {
+                return MatchTheCharacter(char.Parse(character), quantifierType);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+
             return GetThisAsOriginalType();
         }
 
@@ -67,12 +81,31 @@ namespace FluidRegex {
             return GetThisAsOriginalType();
         }
 
+        public T MatchWordBoundary(NumberOfTimes quantifierType = NumberOfTimes.Once)
+        {
+            CurrentRegexExpression += "\\b" + GetQuantifierStringFromQuantifierType(quantifierType);
+            return GetThisAsOriginalType();
+        }
+
+        public T MatchTheSubstringOnceOrMore(string substring)
+        {
+            CurrentRegexExpression += EscapeSpecialCharacters(substring) + GetQuantifierStringFromQuantifierType(NumberOfTimes.OneOrMore);
+            return GetThisAsOriginalType();
+        }
+
+        public T MatchTheSubstringOnceOrNone(string substring)
+        {
+            CurrentRegexExpression += EscapeSpecialCharacters(substring) + GetQuantifierStringFromQuantifierType(NumberOfTimes.OnceOrNone);
+            return GetThisAsOriginalType();
+        }
+
+
         private string EscapeSpecialCharacters(string stringToEscape)
         {
             StringBuilder sb = new StringBuilder();
             foreach (var t in stringToEscape)
             {
-                sb.Append(EscapeCharacters(new[] {t}));
+                sb.Append(string.Join("", EscapeCharacters(new[] {t})));
             }
             return sb.ToString();
         }
@@ -83,6 +116,19 @@ namespace FluidRegex {
             return GetThisAsOriginalType();
         }
 
+        public T MatchOneOfTheseCharacters(int quantifier, params string[] stringsToMatch)
+        {
+            //Add the checks for escape chars
+            CurrentRegexExpression += "[" + string.Join("", stringsToMatch) + "]" + $"{{{quantifier}}}";
+            return GetThisAsOriginalType();
+        }
+
+        public T MatchOneOfTheseCharacters(int quantifierMin, int quantifierMax, params string[] stringsToMatch)
+        {
+            //Add the checks for escape chars
+            CurrentRegexExpression += "[" + string.Join("", stringsToMatch) + "]" + $"{{{quantifierMin},{quantifierMax}}}";
+            return GetThisAsOriginalType();
+        }
 
         public T MatchCustom(string customMatch) {
             //check for characters that need to be escaped
@@ -116,6 +162,11 @@ namespace FluidRegex {
                 default:
                     return null;
             }
+        }
+
+        public string EscapeSubstring(string substring)
+        {
+            return string.Join("", EscapeCharacters(substring.ToCharArray()));
         }
 
         public string[] EscapeCharacters(char[] characters)

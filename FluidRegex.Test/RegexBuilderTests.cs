@@ -180,21 +180,30 @@ namespace FluidRegex.Test
         public void Test_URL_matcher()
         {
 
-            var regexToTest = "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#()?&//=]*)";
-            var paritalMatch = "https?:\\/\\/";
+            var regexToTest = "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#()?&//=]*)";
 
             //todo combine the characters for matching
             var builder = new FluidRegexBuilder()
                 .MatchTheSubstring("http")
-                .MatchTheCharacter('s', NumberOfTimes.ZeroOrMore)
-                .MatchTheCharacter(':')
-                .MatchTheCharacter('/')
-                .MatchTheCharacter('/');
+                .MatchTheSubstringOnceOrNone("s")
+                .MatchTheSubstring(
+                    "://") //todo be smart about it and match as a group if it's not in list of escaped characters and is over
+                .MatchSubstringGroup("www.", NumberOfTimes.OnceOrNone)
+                .MatchOneOfTheseCharacters(2256, "-", "a-z", "A-Z", "0-9", "@", ":", "%", ".", "_", "\\+", "~", "#",
+                    "=") //todo, update the escaping logic
+                .MatchTheSubstring(".")
+                .MatchOneOfTheseCharacters(2, 6, "a-z")
+                .MatchWordBoundary()
+                .MatchGroup(
+                    new FluidRegexGroupBuilder()
+                        .MatchOneOfTheseCharacters(NumberOfTimes.ZeroOrMore, "-", "a-z", "A-Z", "0-9", "@", ":", "%", "_",
+                            "\\+", ".", "~", "#", "(", ")", "?", "&", "/", "/", "=")
+                );
 
 
             var endResultString = builder.ToString();
             Console.WriteLine(endResultString);
-            Assert.AreEqual(paritalMatch, endResultString);
+            Assert.AreEqual(regexToTest, endResultString);
         }
     }
 }
