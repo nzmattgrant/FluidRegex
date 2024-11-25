@@ -70,8 +70,8 @@ namespace FluidRegex {
             return GetThisAsOriginalType();
         }
 
-        public T MatchTheCharachters(NumberOfTimes quantifierType = NumberOfTimes.Once, params char[] charachters) {
-            CurrentRegexExpression += string.Join("", EscapeCharacters(charachters) + GetQuantifierStringFromQuantifierType(quantifierType));
+        public T MatchTheCharacters(NumberOfTimes quantifierType = NumberOfTimes.Once, params char[] characters) {
+            CurrentRegexExpression += string.Join("", EscapeCharacters(characters)) + GetQuantifierStringFromQuantifierType(quantifierType);
             return GetThisAsOriginalType();
         }
 
@@ -146,6 +146,7 @@ namespace FluidRegex {
         }
 
         public Regex GetRegex() {
+            Console.WriteLine(CurrentRegexExpression);
             return new Regex(CurrentRegexExpression);
         }
 

@@ -19,10 +19,10 @@ MatchStringStart()
 .matchGroup(
 	DefineRegexGroupAs blah, RegexQuantifierType.MatchManyTimes
 )
-.matchTheCharachter("@")
+.matchTheCharacter("@")
 .matchAnythingButWhitespace
 .matchGroup(DefineRegexGroupAs()
-	.matchOneOfTheseCharachters("-",".")
+	.matchOneOfTheseCharacters("-",".")
 	.matchAnythingButWhitespace(), 
 	RegexQuantifierType.MatchManyTimes
 )

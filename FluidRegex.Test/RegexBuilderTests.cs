@@ -35,15 +35,15 @@ namespace FluidRegex.Test
         }
 
         [TestMethod]
-        public void Match_The_Charachter_Matches_Charatcher()
+        public void Match_The_Character_Matches_Character()
         {
             var regex = '@';
             var builder = new FluidRegexBuilder()
-                .MatchTheCharachters(NumberOfTimes.Once, regex);
+                .MatchTheCharacters(NumberOfTimes.Once, regex);
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder
                 .ToString();
-            Assert.AreEqual(regex, builtRegexString);
+            Assert.AreEqual(regex.ToString(), builtRegexString);
             Assert.IsTrue(builtRegex.IsMatch("a@a.a"));
             Assert.IsTrue(builtRegex.IsMatch("a@a@a@"));
             Assert.IsTrue(builtRegex.IsMatch("@@@aadsaf@"));
@@ -52,14 +52,14 @@ namespace FluidRegex.Test
 
 
         [TestMethod]
-        public void Match_The_Charachter_Does_Not_Match_Other_Charatchers() {
+        public void Match_The_Character_Does_Not_Match_Other_Characters() {
             var regex = '@';
             var builder = new FluidRegexBuilder()
-                .MatchTheCharachters(NumberOfTimes.Once, regex);
+                .MatchTheCharacters(NumberOfTimes.Once, regex);
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder
                 .ToString();
-            Assert.AreEqual(regex, builtRegexString);
+            Assert.AreEqual(regex.ToString(), builtRegexString);
             Assert.IsFalse(builtRegex.IsMatch("a"));
             Assert.IsFalse(builtRegex.IsMatch("aaaaaa..dfalkj343"));
             Assert.IsFalse(builtRegex.IsMatch("#^%&$"));
@@ -68,7 +68,7 @@ namespace FluidRegex.Test
 
 
         [TestMethod]
-        public void Match_One_Of_These_Charachters_Matches_Charachters() {
+        public void Match_One_Of_These_Characters_Matches_Characters() {
             var regex = "^[sz]";
             var builder = new FluidRegexBuilder()
                 .MatchStringStart()
@@ -105,7 +105,7 @@ namespace FluidRegex.Test
         }
 
         [TestMethod]
-        public void Match_One_Of_These_Charachters_Matches_Right_Charatchers() {
+        public void Match_One_Of_These_Characters_Matches_Right_Characters() {
             var regex = "[-+.']";
             var builder = new FluidRegexBuilder()
                 .MatchOneOfTheseCharacters(NumberOfTimes.Once, "-", "+", ".", "'");
@@ -123,7 +123,7 @@ namespace FluidRegex.Test
         }
 
         [TestMethod]
-        public void Match_One_Of_These_Charachters_Fails_On_No_Match_Strings() {
+        public void Match_One_Of_These_Characters_Fails_On_No_Match_Strings() {
             var regex = "[-+.']";
             var builder = new FluidRegexBuilder()
                 .MatchOneOfTheseCharacters(NumberOfTimes.Once, "-", "+", ".", "'");
@@ -186,8 +186,7 @@ namespace FluidRegex.Test
             var builder = new FluidRegexBuilder()
                 .MatchTheSubstring("http")
                 .MatchTheSubstringOnceOrNone("s")
-                .MatchTheSubstring(
-                    "://") //todo be smart about it and match as a group if it's not in list of escaped characters and is over
+                .MatchTheSubstring("://") //todo be smart about it and match as a group if it's not in list of escaped characters and is over
                 .MatchSubstringGroup("www.", NumberOfTimes.OnceOrNone)
                 .MatchOneOfTheseCharacters(2256, "-", "a-z", "A-Z", "0-9", "@", ":", "%", ".", "_", "\\+", "~", "#",
                     "=") //todo, update the escaping logic
