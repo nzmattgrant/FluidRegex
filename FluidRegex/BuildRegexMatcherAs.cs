@@ -8,18 +8,18 @@ using System.Threading.Tasks;
 
 namespace FluidRegex
 {
-    public class FluidRegexBuilder : FluidRegexBuilderBase<FluidRegexBuilder>
+    public class BuildRegexMatcherAs : FluidRegexBuilderBase<BuildRegexMatcherAs>
     {
-        public FluidRegexBuilder MatchSubstringGroup(string regexGroupString, NumberOfTimes quantifierType = NumberOfTimes.Once)
+        public BuildRegexMatcherAs Group(string regexGroupString, NumberOfTimes quantifierType = NumberOfTimes.Once)
         {
             return MatchGroup(EscapeSubstring(regexGroupString), quantifierType);
         }
 
-        public FluidRegexBuilder MatchGroup(FluidRegexGroupBuilder regexGroup, NumberOfTimes quantifierType = NumberOfTimes.Once) {
+        public BuildRegexMatcherAs Group(FluidRegexGroupBuilder regexGroup, NumberOfTimes quantifierType = NumberOfTimes.Once) {
             return MatchGroup(regexGroup.ToString(), quantifierType);
         }
 
-        private FluidRegexBuilder MatchGroup(string regexGroupString, NumberOfTimes quantifierType = NumberOfTimes.Once) {
+        private BuildRegexMatcherAs Group(string regexGroupString, NumberOfTimes quantifierType = NumberOfTimes.Once) {
             CurrentRegexExpression = CurrentRegexExpression + "(" + regexGroupString + ")" + GetQuantifierStringFromQuantifierType(quantifierType);
             return this;
         }

@@ -75,13 +75,13 @@ namespace FluidRegex {
             return GetThisAsOriginalType();
         }
 
-        public T MatchTheSubstring(string substring, NumberOfTimes quantifierType = NumberOfTimes.Once)
+        public T MatchString(string substring, NumberOfTimes quantifierType = NumberOfTimes.Once)
         {
             CurrentRegexExpression += EscapeSpecialCharacters(substring) + GetQuantifierStringFromQuantifierType(quantifierType);
             return GetThisAsOriginalType();
         }
 
-        public T MatchWordBoundary(NumberOfTimes quantifierType = NumberOfTimes.Once)
+        public T WordBoundary(NumberOfTimes quantifierType = NumberOfTimes.Once)
         {
             CurrentRegexExpression += "\\b" + GetQuantifierStringFromQuantifierType(quantifierType);
             return GetThisAsOriginalType();
@@ -93,9 +93,15 @@ namespace FluidRegex {
             return GetThisAsOriginalType();
         }
 
-        public T MatchTheSubstringOnceOrNone(string substring)
+        public T OnceOrNone(string substring)
         {
-            CurrentRegexExpression += EscapeSpecialCharacters(substring) + GetQuantifierStringFromQuantifierType(NumberOfTimes.OnceOrNone);
+            MatchString(substring, NumberOfTimes.OnceOrNone);
+            return GetThisAsOriginalType();
+        }
+
+        public T Once(string substring)
+        {
+            MatchString(substring, NumberOfTimes.Once);
             return GetThisAsOriginalType();
         }
 
@@ -110,20 +116,20 @@ namespace FluidRegex {
             return sb.ToString();
         }
 
-        public T MatchOneOfTheseCharacters(NumberOfTimes quantifierType = NumberOfTimes.Once, params string[] stringsToMatch) {
+        public T OneOfTheseCharacters(NumberOfTimes quantifierType = NumberOfTimes.Once, params string[] stringsToMatch) {
             //Add the checks for escape chars
             CurrentRegexExpression += "[" + string.Join("", stringsToMatch) + "]" + GetQuantifierStringFromQuantifierType(quantifierType);
             return GetThisAsOriginalType();
         }
 
-        public T MatchOneOfTheseCharacters(int quantifier, params string[] stringsToMatch)
+        public T OneOfTheseCharacters(int quantifier, params string[] stringsToMatch)
         {
             //Add the checks for escape chars
             CurrentRegexExpression += "[" + string.Join("", stringsToMatch) + "]" + $"{{{quantifier}}}";
             return GetThisAsOriginalType();
         }
 
-        public T MatchOneOfTheseCharacters(int quantifierMin, int quantifierMax, params string[] stringsToMatch)
+        public T OneOfTheseCharacters(int quantifierMin, int quantifierMax, params string[] stringsToMatch)
         {
             //Add the checks for escape chars
             CurrentRegexExpression += "[" + string.Join("", stringsToMatch) + "]" + $"{{{quantifierMin},{quantifierMax}}}";

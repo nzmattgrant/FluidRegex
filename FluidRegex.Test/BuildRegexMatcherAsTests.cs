@@ -4,13 +4,13 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace FluidRegex.Test
 {
     [TestClass]
-    public class RegexBuilderTests
+    public class BuildRegexMatcherAsTests
     {
         [TestMethod]
         public void Match_Everything_But_Whitespace_Wont_Match_WhiteSpace()
         {
             var regex = @"\w";
-            var builder = new FluidRegexBuilder()
+            var builder = new BuildRegexMatcherAs()
                 .MatchAnythingButWhiteSpace(NumberOfTimes.Once);
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder
@@ -22,7 +22,7 @@ namespace FluidRegex.Test
         [TestMethod]
         public void Match_Everything_But_Whitespace_Matches_Non_White_Space() {
             var regex = @"\w";
-            var builder = new FluidRegexBuilder()
+            var builder = new BuildRegexMatcherAs()
                 .MatchAnythingButWhiteSpace(NumberOfTimes.Once);
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder
@@ -38,7 +38,7 @@ namespace FluidRegex.Test
         public void Match_The_Character_Matches_Character()
         {
             var regex = '@';
-            var builder = new FluidRegexBuilder()
+            var builder = new BuildRegexMatcherAs()
                 .MatchTheCharacters(NumberOfTimes.Once, regex);
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder
@@ -54,7 +54,7 @@ namespace FluidRegex.Test
         [TestMethod]
         public void Match_The_Character_Does_Not_Match_Other_Characters() {
             var regex = '@';
-            var builder = new FluidRegexBuilder()
+            var builder = new BuildRegexMatcherAs()
                 .MatchTheCharacters(NumberOfTimes.Once, regex);
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder
@@ -70,9 +70,9 @@ namespace FluidRegex.Test
         [TestMethod]
         public void Match_One_Of_These_Characters_Matches_Characters() {
             var regex = "^[sz]";
-            var builder = new FluidRegexBuilder()
+            var builder = new BuildRegexMatcherAs()
                 .MatchStringStart()
-                .MatchOneOfTheseCharacters(NumberOfTimes.Once, "s", "z");
+                .OneOfTheseCharacters(NumberOfTimes.Once, "s", "z");
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder.ToString();
             Assert.AreEqual(regex, builtRegexString);
@@ -88,9 +88,9 @@ namespace FluidRegex.Test
         [TestMethod]
         public void Match_Start_String_Only_Matches_Start_Of_String() {
             var regex = "^start";
-            var builder = new FluidRegexBuilder()
+            var builder = new BuildRegexMatcherAs()
                 .MatchStringStart()
-                .MatchTheSubstring("start");
+                .MatchString("start");
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder
                 .ToString();
@@ -107,8 +107,8 @@ namespace FluidRegex.Test
         [TestMethod]
         public void Match_One_Of_These_Characters_Matches_Right_Characters() {
             var regex = "[-+.']";
-            var builder = new FluidRegexBuilder()
-                .MatchOneOfTheseCharacters(NumberOfTimes.Once, "-", "+", ".", "'");
+            var builder = new BuildRegexMatcherAs()
+                .OneOfTheseCharacters(NumberOfTimes.Once, "-", "+", ".", "'");
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder
                 .ToString();
@@ -125,8 +125,8 @@ namespace FluidRegex.Test
         [TestMethod]
         public void Match_One_Of_These_Characters_Fails_On_No_Match_Strings() {
             var regex = "[-+.']";
-            var builder = new FluidRegexBuilder()
-                .MatchOneOfTheseCharacters(NumberOfTimes.Once, "-", "+", ".", "'");
+            var builder = new BuildRegexMatcherAs()
+                .OneOfTheseCharacters(NumberOfTimes.Once, "-", "+", ".", "'");
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder
                 .ToString();
@@ -149,26 +149,26 @@ namespace FluidRegex.Test
             var regexToTest = "^\\w+([-+.']\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*$";
 
             var wordsWithAllowedStartSymbols = new FluidRegexGroupBuilder()
-                .MatchOneOfTheseCharacters(NumberOfTimes.Once, "-", "+", ".", "'")
+                .OneOfTheseCharacters(NumberOfTimes.Once, "-", "+", ".", "'")
                 .MatchAnyLettersOrNumbers(NumberOfTimes.OneOrMore);
 
             //Idea about a refactor (think about this later)
-            //new RegexMatcher().Match().WhiteSpace().ThenGroup().ThenTheCharchater
+            //new RegexMatcher().MatchString().WhiteSpace().ThenGroup().ThenTheCharchater
 
             var wordsWithHyphenAndDots = new FluidRegexGroupBuilder()
-                .MatchOneOfTheseCharacters(NumberOfTimes.Once, "-", ".")
+                .OneOfTheseCharacters(NumberOfTimes.Once, "-", ".")
                 .MatchAnyLettersOrNumbers(NumberOfTimes.OneOrMore);
 
-            var builder = new FluidRegexBuilder()
+            var builder = new BuildRegexMatcherAs()
                 .MatchStringStart()
                 .MatchAnyLettersOrNumbers(NumberOfTimes.OneOrMore)
-                .MatchGroup(wordsWithAllowedStartSymbols, NumberOfTimes.ZeroOrMore)
+                .Group(wordsWithAllowedStartSymbols, NumberOfTimes.ZeroOrMore)
                 .MatchTheCharacter('@')
                 .MatchAnyLettersOrNumbers(NumberOfTimes.OneOrMore)
-                .MatchGroup(wordsWithHyphenAndDots, NumberOfTimes.ZeroOrMore)
+                .Group(wordsWithHyphenAndDots, NumberOfTimes.ZeroOrMore)
                 .MatchTheCharacter('.')
                 .MatchAnyLettersOrNumbers(NumberOfTimes.OneOrMore)
-                .MatchGroup(wordsWithHyphenAndDots,NumberOfTimes.ZeroOrMore)
+                .Group(wordsWithHyphenAndDots,NumberOfTimes.ZeroOrMore)
                 .MatchStringEnd();
 
             var endResultString = builder.ToString();
@@ -179,26 +179,23 @@ namespace FluidRegex.Test
         [TestMethod]
         public void Test_URL_matcher()
         {
-
             var regexToTest = "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#()?&//=]*)";
 
             //todo combine the characters for matching
-            var builder = new FluidRegexBuilder()
-                .MatchTheSubstring("http")
-                .MatchTheSubstringOnceOrNone("s")
-                .MatchTheSubstring("://") //todo be smart about it and match as a group if it's not in list of escaped characters and is over
-                .MatchSubstringGroup("www.", NumberOfTimes.OnceOrNone)
-                .MatchOneOfTheseCharacters(2256, "-", "a-z", "A-Z", "0-9", "@", ":", "%", ".", "_", "\\+", "~", "#",
-                    "=") //todo, update the escaping logic
-                .MatchTheSubstring(".")
-                .MatchOneOfTheseCharacters(2, 6, "a-z")
-                .MatchWordBoundary()
-                .MatchGroup(
+            var builder = new BuildRegexMatcherAs()
+                .Once("http")
+                .OnceOrNone("s")
+                .Once("://") //todo be smart about it and match as a group if it's not in list of escaped characters and is over
+                .Group("www.", NumberOfTimes.OnceOrNone)
+                .OneOfTheseCharacters(2256, "-", "a-z", "A-Z", "0-9", "@", ":", "%", ".", "_", "\\+", "~", "#", "=") //todo, update the escaping logic
+                .Once(".")
+                .OneOfTheseCharacters(2, 6, "a-z")
+                .WordBoundary()
+                .Group(
                     new FluidRegexGroupBuilder()
-                        .MatchOneOfTheseCharacters(NumberOfTimes.ZeroOrMore, "-", "a-z", "A-Z", "0-9", "@", ":", "%", "_",
+                        .OneOfTheseCharacters(NumberOfTimes.ZeroOrMore, "-", "a-z", "A-Z", "0-9", "@", ":", "%", "_",
                             "\\+", ".", "~", "#", "(", ")", "?", "&", "/", "/", "=")
                 );
-
 
             var endResultString = builder.ToString();
             Console.WriteLine(endResultString);
