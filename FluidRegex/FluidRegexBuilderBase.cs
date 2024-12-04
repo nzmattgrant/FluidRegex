@@ -19,12 +19,12 @@ namespace FluidRegex {
             return GetThisAsOriginalType();
         }
 
-        public T MatchStringStart() {
+        public T StringStart() {
             CurrentRegexExpression += "^";
             return GetThisAsOriginalType();
         }
 
-        public T MatchStringEnd()
+        public T StringEnd()
         {
             CurrentRegexExpression += "$";
             return GetThisAsOriginalType();
@@ -45,22 +45,22 @@ namespace FluidRegex {
             return GetThisAsOriginalType();
         }
 
-        public T MatchAnyLettersOrNumbers(NumberOfTimes quantifierType = NumberOfTimes.Once) {
+        public T AnyLettersOrNumbers(NumberOfTimes quantifierType = NumberOfTimes.Once) {
             CurrentRegexExpression += @"\w" + GetQuantifierStringFromQuantifierType(quantifierType);
             return GetThisAsOriginalType();
         }
 
-        public T MatchTheCharacter(char character, NumberOfTimes quantifierType = NumberOfTimes.Once)
+        public T TheCharacter(char character, NumberOfTimes quantifierType = NumberOfTimes.Once)
         {
             CurrentRegexExpression += EscapeCharacters(new []{ character })[0] + GetQuantifierStringFromQuantifierType(quantifierType);
             return GetThisAsOriginalType();
         }
 
-        public T MatchTheCharacter(string character, NumberOfTimes quantifierType = NumberOfTimes.Once)
+        public T TheCharacter(string character, NumberOfTimes quantifierType = NumberOfTimes.Once)
         {
             try
             {
-                return MatchTheCharacter(char.Parse(character), quantifierType);
+                return TheCharacter(char.Parse(character), quantifierType);
             }
             catch (Exception e)
             {
