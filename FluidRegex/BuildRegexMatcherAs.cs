@@ -10,16 +10,17 @@ namespace FluidRegex
 {
     public class BuildRegexMatcherAs : FluidRegexBuilderBase<BuildRegexMatcherAs>
     {
+        public BuildRegexMatcherAs Group(FluidRegexGroupBuilder regexGroup, NumberOfTimes quantifierType = NumberOfTimes.Once)
+        {
+            return Group(regexGroup.ToString(), quantifierType);
+        }
+
         public BuildRegexMatcherAs Group(string regexGroupString, NumberOfTimes quantifierType = NumberOfTimes.Once)
         {
-            return MatchGroup(EscapeSubstring(regexGroupString), quantifierType);
+            return AddGroup(EscapeSubstring(regexGroupString), quantifierType);
         }
 
-        public BuildRegexMatcherAs Group(FluidRegexGroupBuilder regexGroup, NumberOfTimes quantifierType = NumberOfTimes.Once) {
-            return MatchGroup(regexGroup.ToString(), quantifierType);
-        }
-
-        private BuildRegexMatcherAs Group(string regexGroupString, NumberOfTimes quantifierType = NumberOfTimes.Once) {
+        private BuildRegexMatcherAs AddGroup(string regexGroupString, NumberOfTimes quantifierType = NumberOfTimes.Once) {
             CurrentRegexExpression = CurrentRegexExpression + "(" + regexGroupString + ")" + GetQuantifierStringFromQuantifierType(quantifierType);
             return this;
         }

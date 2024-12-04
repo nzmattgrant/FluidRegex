@@ -101,7 +101,7 @@ namespace FluidRegex {
 
         public T Once(string substring)
         {
-            MatchString(substring, NumberOfTimes.Once);
+            MatchString(substring);
             return GetThisAsOriginalType();
         }
 
