@@ -4,13 +4,13 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace FluidRegex.Test
 {
     [TestClass]
-    public class BuildRegexMatcherAsTests
+    public class MatchThesePatternsTests
     {
         [TestMethod]
         public void Match_Everything_But_Whitespace_Wont_Match_WhiteSpace()
         {
             var regex = @"\w";
-            var builder = new BuildRegexMatcherAs()
+            var builder = new MatchThesePatterns()
                 .MatchAnythingButWhiteSpace(NumberOfTimes.Once);
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder
@@ -22,7 +22,7 @@ namespace FluidRegex.Test
         [TestMethod]
         public void Match_Everything_But_Whitespace_Matches_Non_White_Space() {
             var regex = @"\w";
-            var builder = new BuildRegexMatcherAs()
+            var builder = new MatchThesePatterns()
                 .MatchAnythingButWhiteSpace(NumberOfTimes.Once);
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder
@@ -38,7 +38,7 @@ namespace FluidRegex.Test
         public void Match_The_Character_Matches_Character()
         {
             var regex = '@';
-            var builder = new BuildRegexMatcherAs()
+            var builder = new MatchThesePatterns()
                 .MatchTheCharacters(NumberOfTimes.Once, regex);
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder
@@ -54,7 +54,7 @@ namespace FluidRegex.Test
         [TestMethod]
         public void Match_The_Character_Does_Not_Match_Other_Characters() {
             var regex = '@';
-            var builder = new BuildRegexMatcherAs()
+            var builder = new MatchThesePatterns()
                 .MatchTheCharacters(NumberOfTimes.Once, regex);
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder
@@ -70,7 +70,7 @@ namespace FluidRegex.Test
         [TestMethod]
         public void Match_One_Of_These_Characters_Matches_Characters() {
             var regex = "^[sz]";
-            var builder = new BuildRegexMatcherAs()
+            var builder = new MatchThesePatterns()
                 .StringStart()
                 .OneOfTheseCharacters(NumberOfTimes.Once, "s", "z");
             var builtRegex = builder.GetRegex();
@@ -88,7 +88,7 @@ namespace FluidRegex.Test
         [TestMethod]
         public void Match_Start_String_Only_Matches_Start_Of_String() {
             var regex = "^start";
-            var builder = new BuildRegexMatcherAs()
+            var builder = new MatchThesePatterns()
                 .StringStart()
                 .MatchString("start");
             var builtRegex = builder.GetRegex();
@@ -107,7 +107,7 @@ namespace FluidRegex.Test
         [TestMethod]
         public void Match_One_Of_These_Characters_Matches_Right_Characters() {
             var regex = "[-+.']";
-            var builder = new BuildRegexMatcherAs()
+            var builder = new MatchThesePatterns()
                 .OneOfTheseCharacters(NumberOfTimes.Once, "-", "+", ".", "'");
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder
@@ -125,7 +125,7 @@ namespace FluidRegex.Test
         [TestMethod]
         public void Match_One_Of_These_Characters_Fails_On_No_Match_Strings() {
             var regex = "[-+.']";
-            var builder = new BuildRegexMatcherAs()
+            var builder = new MatchThesePatterns()
                 .OneOfTheseCharacters(NumberOfTimes.Once, "-", "+", ".", "'");
             var builtRegex = builder.GetRegex();
             var builtRegexString = builder
@@ -159,7 +159,7 @@ namespace FluidRegex.Test
                 .OneOfTheseCharacters(NumberOfTimes.Once, "-", ".")
                 .AnyLettersOrNumbers(NumberOfTimes.OneOrMore);
 
-            var builder = new BuildRegexMatcherAs()
+            var builder = new MatchThesePatterns()
                 .StringStart()
                 .AnyLettersOrNumbers(NumberOfTimes.OneOrMore)
                 .Group(wordsWithAllowedStartSymbols, NumberOfTimes.ZeroOrMore)
@@ -182,7 +182,7 @@ namespace FluidRegex.Test
             var regexToTest = "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#()?&//=]*)";
 
             //todo combine the characters for matching
-            var builder = new BuildRegexMatcherAs()
+            var builder = new MatchThesePatterns()
                 .Once("http")
                 .OnceOrNone("s")
                 .Once("://") //todo be smart about it and match as a group if it's not in list of escaped characters and is over
