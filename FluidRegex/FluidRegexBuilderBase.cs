@@ -142,6 +142,18 @@ namespace FluidRegex {
             return GetThisAsOriginalType();
         }
 
+        public T LookAhead(string lookAhead)
+        {
+            CurrentRegexExpression += "(?=" + lookAhead + ")";
+            return GetThisAsOriginalType();
+        }
+
+        public T NegativeLookAhead(string negativeLookAhead)
+        {
+            CurrentRegexExpression += "(?!" + negativeLookAhead + ")";
+            return GetThisAsOriginalType();
+        }
+
         public T SetCurrentRegexAsGroup() {
             CurrentRegexExpression = "(" + CurrentRegexExpression + ")";
             return GetThisAsOriginalType();
