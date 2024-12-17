@@ -137,7 +137,21 @@ namespace FluidRegex.Test
             Assert.IsFalse(builtRegex.IsMatch("///"));
             Assert.IsFalse(builtRegex.IsMatch("ahhh"));
             Assert.IsFalse(builtRegex.IsMatch("start of the string"));
+        }
 
+        [TestMethod]
+        public void LookAhead()
+        {
+            var regex = "X(?=Y)";
+            var builder = new MatchThesePatterns()
+                .Once("X")
+                .Before("Y");
+            var builtRegex = builder.GetRegex();
+            var builtRegexString = builder
+                .ToString();
+            Assert.AreEqual(regex, builtRegexString);
+            Assert.IsTrue(builtRegex.IsMatch("XYZ"));
+            Assert.IsTrue(builtRegex.IsMatch("XY"));
         }
 
         [TestMethod]
