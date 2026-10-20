@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="FluidRegex.Test/FluidRegex.Test.csproj" />
+  <Project Path="FluidRegex/FluidRegex.csproj" />
+</Solution>

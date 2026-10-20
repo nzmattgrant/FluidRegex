@@ -1,69 +1,52 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ========== Build ========== -->
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F8FFCD6A-B853-40AE-8BA0-CFD2DF26B8FF}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>FluidRegex</RootNamespace>
+    <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
+    <OutputType>Library</OutputType>
     <AssemblyName>FluidRegex</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <RootNamespace>FluidRegex</RootNamespace>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- NU1901-NU1904 = NuGet audit advisories: report them, but don't let a new advisory break a release build. -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+
+    <!-- Trim / AOT analyzers only run on the modern target. -->
+    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+
+  <!-- ========== NuGet package ========== -->
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>FluidRegex</PackageId>
+    <!-- Single source of truth for the version. CI fails a release if the git tag (v0.1.0) doesn't match. -->
+    <Version>0.1.0</Version>
+    <Authors>nzmattgrant</Authors>
+    <Copyright>Copyright (c) 2018-2026 nzmattgrant</Copyright>
+    <Description>Build .NET regular expressions with fluent method chains that read like an English description of the text you want to find. Literal text is always escaped, counts always cover the whole item, sub-patterns are reusable, and the result is an ordinary System.Text.RegularExpressions.Regex. No dependencies.</Description>
+    <PackageTags>regex;regular-expression;regular-expressions;fluent;fluent-api;fluent-interface;builder;readable;readable-regex;pattern</PackageTags>
+    <PackageProjectUrl>https://github.com/nzmattgrant/FluidRegex</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/nzmattgrant/FluidRegex.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>https://github.com/nzmattgrant/FluidRegex/releases</PackageReleaseNotes>
+
+    <DebugType>portable</DebugType>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <!-- From 1.0.0: <PackageValidationBaselineVersion>1.0.0</PackageValidationBaselineVersion> -->
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
+    <None Include="..\README.md" Pack="true" PackagePath="\" Visible="false" />
+    <!-- Compile-time polyfills only ([StringSyntax] on netstandard2.0); never a package dependency. -->
+    <PackageReference Include="PolySharp" Version="1.16.0" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    <InternalsVisibleTo Include="FluidRegex.Test" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Enums.cs" />
-    <Compile Include="MatchThesePatterns.cs" />
-    <Compile Include="FluidRegexBuilderBase.cs" />
-    <Compile Include="FluidRegexFactory.cs" />
-    <Compile Include="FluidRegexGroupBuilder.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RegexNode.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="design.txt" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
 </Project>

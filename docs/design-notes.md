@@ -1,4 +1,9 @@
-﻿translated to fluid C# email matcher
+# Early design notes
+
+The original 2018 sketch of the API, kept as history. The idea of passing reusable sub-patterns into `Group(...)` instead of start/end calls started here. For the current API see the [README](https://github.com/nzmattgrant/FluidRegex/blob/master/README.md).
+
+```text
+translated to fluid C# email matcher
 ^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$
 
 DefineRegexAs()
@@ -26,3 +31,4 @@ MatchStringStart()
 	.matchAnythingButWhitespace(), 
 	RegexQuantifierType.MatchManyTimes
 )
+```

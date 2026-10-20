@@ -286,3 +286,10 @@ __pycache__/
 *.btm.cs
 *.odx.cs
 *.xsd.cs
+
+# NuGet symbol packages, build logs, coverage and local pack output
+*.snupkg
+*.binlog
+coverage*.xml
+*.cobertura.xml
+artifacts/
