@@ -5,7 +5,7 @@ namespace FluidRegex.Internal;
 /// <summary>Argument checks. netstandard2.0 has no ArgumentNullException.ThrowIfNull and friends.</summary>
 internal static class Guard
 {
-    private static readonly Regex CaptureNamePattern = new(@"\A[^\W\d]\w*\z", RegexOptions.CultureInvariant);
+    private static readonly Regex SavedNamePattern = new(@"\A[^\W\d]\w*\z", RegexOptions.CultureInvariant);
 
     public static T NotNull<T>(T? value, string paramName)
         where T : class =>
@@ -27,15 +27,18 @@ internal static class Guard
     }
 
     public static int NotNegative(int value, string paramName) =>
-        value < 0 ? throw new ArgumentOutOfRangeException(paramName, value, "The value cannot be negative.") : value;
+        value < 0 ? throw new ArgumentOutOfRangeException(paramName, value, "The value must be 0 or more.") : value;
 
-    public static string CaptureName(string? name, string paramName)
+    public static int Positive(int value, string paramName) =>
+        value <= 0 ? throw new ArgumentOutOfRangeException(paramName, value, "The value must be 1 or more.") : value;
+
+    public static string SavedName(string? name, string paramName)
     {
         NotNullOrEmpty(name, paramName);
-        if (!CaptureNamePattern.IsMatch(name!))
+        if (!SavedNamePattern.IsMatch(name!))
         {
             throw new ArgumentException(
-                $"\"{name}\" is not a valid capture name. A capture name starts with a letter or underscore and contains only letters, digits and underscores.",
+                $"\"{name}\" can't be used as a name. A name starts with a letter or underscore and contains only letters, digits and underscores.",
                 paramName);
         }
 

@@ -1,14 +1,12 @@
-using System.Text.RegularExpressions;
-
 namespace FluidRegex.Internal;
 
 /// <summary>
-/// Checks ToRegex() runs on the finished pattern, for mistakes .NET accepts silently.
-/// Everything .NET reports itself (undefined groups, RawRegex syntax errors) is left to the Regex constructor.
+/// Checks ToRegex() runs on the finished pattern, for mistakes .NET accepts silently or reports in regex jargon.
+/// Everything else (RawRegex syntax errors) is left to the Regex constructor.
 /// </summary>
 internal static class PatternChecks
 {
-    public static void Check(NodeList nodes, RegexOptions options)
+    public static void Check(NodeList nodes)
     {
         var walk = new Walk();
         foreach (var node in nodes.Items)
@@ -16,73 +14,65 @@ internal static class PatternChecks
             walk.Visit(node, insideLookbehind: false);
         }
 
-        // A reference that comes before every capture of that name can never match.
-        foreach (var name in walk.ReferencedBeforeCapture)
+        // RawRegex can save a name the walk can't see, so leave unknown names to .NET then.
+        if (!walk.HasRawRegex)
         {
-            if (walk.CaptureNames.Contains(name))
+            foreach (var name in walk.ReferencedNames)
             {
-                throw new ArgumentException(
-                    $"The pattern uses TheSameTextAsCapture(\"{name}\") before CaptureAs(\"{name}\", ...). " +
-                    "A reference only matches text that has already been captured, so it must come after the capture.");
+                if (!walk.SavedNames.Contains(name))
+                {
+                    throw new ArgumentException(
+                        $"The pattern uses SameTextAsSaved(\"{name}\"), but nothing is saved as \"{name}\". " +
+                        $"Add SaveAs(\"{name}\", ...) before it.");
+                }
             }
         }
 
-        if ((options & RegexOptions.ExplicitCapture) != 0)
+        // A reference that comes before every capture of that name can never match.
+        foreach (var name in walk.ReferencedBeforeSave)
         {
-            if (walk.HasUnnamedCapture)
+            if (walk.SavedNames.Contains(name))
             {
                 throw new ArgumentException(
-                    "RegexOptions.ExplicitCapture stops Capture(...) from capturing anything. Use CaptureAs(name, ...) or remove the option.");
-            }
-
-            if (walk.HasNumberedReference)
-            {
-                throw new ArgumentException(
-                    "RegexOptions.ExplicitCapture leaves no numbered captures for TheSameTextAsCapture(number) to refer to. Refer to the capture by name instead.");
+                    $"The pattern uses SameTextAsSaved(\"{name}\") before SaveAs(\"{name}\", ...). " +
+                    "It can only repeat text that was already saved, so it must come after SaveAs.");
             }
         }
     }
 
     private sealed class Walk
     {
-        public HashSet<string> CaptureNames { get; } = new(StringComparer.Ordinal);
+        public HashSet<string> SavedNames { get; } = new(StringComparer.Ordinal);
 
-        public HashSet<string> ReferencedBeforeCapture { get; } = new(StringComparer.Ordinal);
+        public HashSet<string> ReferencedNames { get; } = new(StringComparer.Ordinal);
 
-        public bool HasUnnamedCapture { get; private set; }
+        public HashSet<string> ReferencedBeforeSave { get; } = new(StringComparer.Ordinal);
 
-        public bool HasNumberedReference { get; private set; }
+        public bool HasRawRegex { get; private set; }
 
         public void Visit(RegexNode node, bool insideLookbehind)
         {
             switch (node)
             {
                 case CaptureNode capture:
-                    if (capture.Name is null)
-                    {
-                        HasUnnamedCapture = true;
-                    }
-                    else
-                    {
-                        // Counted as seen on entry, so a reference inside its own capture isn't flagged.
-                        CaptureNames.Add(capture.Name);
-                    }
-
+                    // Counted as seen on entry, so a reference inside its own capture isn't flagged.
+                    SavedNames.Add(capture.Name);
                     break;
                 case BackreferenceNode reference:
-                    if (reference.Name is null)
+                    ReferencedNames.Add(reference.Name);
+
+                    // Lookbehinds run right to left, so reading order says nothing about them.
+                    if (!insideLookbehind && !SavedNames.Contains(reference.Name))
                     {
-                        HasNumberedReference = true;
-                    }
-                    else if (!insideLookbehind && !CaptureNames.Contains(reference.Name))
-                    {
-                        // Lookbehinds run right to left, so reading order says nothing about them.
-                        ReferencedBeforeCapture.Add(reference.Name);
+                        ReferencedBeforeSave.Add(reference.Name);
                     }
 
                     break;
                 case LookaroundNode { IsBehind: true }:
                     insideLookbehind = true;
+                    break;
+                case RawNode:
+                    HasRawRegex = true;
                     break;
             }
 

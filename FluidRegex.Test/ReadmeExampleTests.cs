@@ -1,5 +1,3 @@
-using static FluidRegex.NumberOfTimes;
-
 namespace FluidRegex.Test;
 
 /// <summary>Every snippet in README.md, exactly as written there. Add a test here with every new README snippet.</summary>
@@ -9,198 +7,204 @@ public class ReadmeExampleTests
     [TestMethod]
     public void Opening_Iso_Date()
     {
-        var isoDate = new MatchThesePatterns()
-            .StartOfText()
-            .AnyDigit(Exactly(4)).TheCharacter('-')
-            .AnyDigit(Exactly(2)).TheCharacter('-')
-            .AnyDigit(Exactly(2))
-            .EndOfText();
+        var isoDate = new TextPattern()
+            .Exactly(4).Digit().Text("-")
+            .Exactly(2).Digit().Text("-")
+            .Exactly(2).Digit();
 
-        Assert.IsTrue(isoDate.IsMatch("2026-10-12"));
-        Assert.AreEqual(@"\A\d{4}-\d{2}-\d{2}\z", isoDate.ToString());
+        Assert.IsTrue(isoDate.MatchesWholeText("2026-10-12"));
+        Assert.AreEqual("[0-9]{4}-[0-9]{2}-[0-9]{2}", isoDate.ToString());
     }
 
     [TestMethod]
     public void Email()
     {
-        var wordsWithAllowedStartSymbols = new SubPattern()
-            .OneOfTheseCharacters("-+.'")
-            .AnyWordCharacter(OneOrMore);
-        var wordsWithHyphenAndDots = new SubPattern()
-            .OneOfTheseCharacters("-.")
-            .AnyWordCharacter(OneOrMore);
+        var word = new TextPattern()
+            .OneOrMore().OneOfTheseCharacters(new CharacterSet().Letters().Digits().Characters("_"));
+        var symbolThenWord = new TextPattern().OneOfTheseCharacters("-+.'").Pattern(word);
+        var dotOrHyphenThenWord = new TextPattern().OneOfTheseCharacters("-.").Pattern(word);
 
-        var email = new MatchThesePatterns()
-            .StartOfText()
-            .AnyWordCharacter(OneOrMore)
-            .Group(wordsWithAllowedStartSymbols, ZeroOrMore)
-            .TheCharacter('@')
-            .AnyWordCharacter(OneOrMore)
-            .Group(wordsWithHyphenAndDots, ZeroOrMore)
-            .TheCharacter('.')
-            .AnyWordCharacter(OneOrMore)
-            .Group(wordsWithHyphenAndDots, ZeroOrMore)
-            .EndOfText();
+        var email = new TextPattern()
+            .Pattern(word)
+            .ZeroOrMore().Pattern(symbolThenWord)
+            .Text("@")
+            .Pattern(word)
+            .ZeroOrMore().Pattern(dotOrHyphenThenWord)
+            .Text(".")
+            .Pattern(word)
+            .ZeroOrMore().Pattern(dotOrHyphenThenWord);
 
-        Assert.AreEqual(@"\A\w+(?:[-+.']\w+)*@\w+(?:[-.]\w+)*\.\w+(?:[-.]\w+)*\z", email.ToString());
-        Assert.IsTrue(email.IsMatch("john.smith@example.co.uk"));
-        Assert.IsTrue(email.IsMatch("o'neil+tag@mail.co.uk"));
-        Assert.IsFalse(email.IsMatch("john..smith@example.com"));
-        Assert.IsFalse(email.IsMatch("john@example"));
-        Assert.IsFalse(email.IsMatch("john@example.com\n"));
+        Assert.IsTrue(email.MatchesWholeText("john.smith@example.co.uk"));
+        Assert.IsFalse(email.MatchesWholeText("junk john@example.com"));
+        Assert.IsTrue(email.MatchesWholeText("o'neil+tag@mail.co.uk"));
+        Assert.IsFalse(email.MatchesWholeText("john..smith@example.com"));
+        Assert.IsFalse(email.MatchesWholeText("john@example"));
+        Assert.IsFalse(email.MatchesWholeText("john@example.com\n"));
     }
 
     [TestMethod]
     public void Why_Bullets()
     {
-        Assert.IsTrue(new MatchThesePatterns().TheText("a+b").IsMatch("a+b"));
-        Assert.AreEqual("(?:abc)+", new MatchThesePatterns().TheText("abc", OneOrMore).ToString());
-        Assert.ThrowsExactly<ArgumentException>(() => new MatchThesePatterns().OneOfTheseCharacters("a-z"));
+        Assert.IsTrue(new TextPattern().Text("a+b").IsFoundIn("a+b"));
+        Assert.AreEqual("(?:abc)+", new TextPattern().OneOrMore().Text("abc").ToString());
+        Assert.IsTrue(new TextPattern().Digit().IsFoundIn("7"));
+        Assert.IsFalse(new TextPattern().Digit().IsFoundIn("٣"));
+        Assert.IsTrue(new TextPattern().AnyCharacter().IsFoundIn("\n"));
+        var exception = Assert.ThrowsExactly<ArgumentException>(() => new TextPattern().OneOfTheseCharacters("a-z"));
+        StringAssert.Contains(exception.Message, "AnyCharacterInRange('a', 'z')");
+    }
+
+    [TestMethod]
+    public void Cheat_Sheet_Rows()
+    {
+        var start = new TextPattern();
+        Assert.AreEqual(@"www\.", start.Text("www.").ToString());
+        Assert.AreEqual("[^<>]", start.AnyCharacterExcept("<>").ToString());
+        Assert.AreEqual("[a-z]", start.AnyCharacterInRange('a', 'z').ToString());
+        Assert.AreEqual(@"(?:\p{IsGreek})", start.RawRegex(@"\p{IsGreek}").ToString());
+        Assert.AreEqual("a{0,3}", start.AtMost(3).Text("a").ToString());
+        Assert.AreEqual(@"\b(?=\w)", start.StartOfWord().ToString());
+        Assert.AreEqual(@"\b(?<=\w)", start.EndOfWord().ToString());
+        Assert.AreEqual(@"(?<=\$)", start.IfPrecededBy("$").ToString());
+        Assert.AreEqual(@"(?<!\$)", start.IfNotPrecededBy("$").ToString());
+        Assert.AreEqual("<a>", start.Text("<").OneOrMore().AsFewAsPossible().AnyCharacter().Text(">").FindFirst("<a><b>")!.Text);
+        Assert.AreEqual("<a><b>", start.Text("<").OneOrMore().AnyCharacter().Text(">").FindFirst("<a><b>")!.Text);
     }
 
     [TestMethod]
     public void Url()
     {
         var hostCharacters = new CharacterSet()
-            .TheCharacter('-')
-            .CharactersInRange('a', 'z').CharactersInRange('A', 'Z').CharactersInRange('0', '9')
-            .TheCharacters("@:%._+~#=");
+            .CharactersInRange('a', 'z').CharactersInRange('A', 'Z').Digits()
+            .Characters("-@:%._+~#=");
         var pathCharacters = new CharacterSet()
-            .TheCharacter('-')
-            .CharactersInRange('a', 'z').CharactersInRange('A', 'Z').CharactersInRange('0', '9')
-            .TheCharacters("@:%_+.~#()?&/=");
-        var path = new SubPattern().OneOfTheseCharacters(pathCharacters, ZeroOrMore);
+            .CharactersInRange('a', 'z').CharactersInRange('A', 'Z').Digits()
+            .Characters("-@:%_+.~#()?&/=");
+        var path = new TextPattern().ZeroOrMore().OneOfTheseCharacters(pathCharacters);
 
-        var url = new MatchThesePatterns()
-            .TheText("http")
-            .TheCharacter('s', Optional)
-            .TheText("://")
-            .TheText("www.", Optional)
-            .OneOfTheseCharacters(hostCharacters, Between(2, 256))
-            .TheCharacter('.')
-            .AnyCharacterInRange('a', 'z', Between(2, 6))
-            .WordBoundary()
-            .Capture(path);
+        var url = new TextPattern()
+            .Text("http")
+            .Optional().Text("s")
+            .Text("://")
+            .Optional().Text("www.")
+            .Between(2, 256).OneOfTheseCharacters(hostCharacters)
+            .Text(".")
+            .Between(2, 6).AnyCharacterInRange('a', 'z')
+            .EndOfWord()
+            .SaveAs("path", path);
 
         Assert.AreEqual(
-            @"https?://(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#()?&/=]*)",
+            @"https?://(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b(?<=\w)(?<path>[-a-zA-Z0-9@:%_+.~#()?&/=]*)",
             url.ToString());
-        Assert.AreEqual("/path?q=1", url.ToRegex().Match("https://www.example.com/path?q=1").Groups[1].Value);
-        Assert.IsTrue(url.IsMatch("http://example.org"));
-        Assert.IsFalse(url.IsMatch("ftp://example.com"));
-        Assert.IsFalse(url.IsMatch("http//example.com"));
+        Assert.AreEqual("/path?q=1", url.FindFirst("Go to https://www.example.com/path?q=1")?.Saved("path"));
+        Assert.IsTrue(url.IsFoundIn("http://example.org"));
+        Assert.IsFalse(url.IsFoundIn("ftp://example.com"));
+        Assert.IsFalse(url.IsFoundIn("http//example.com"));
     }
 
     [TestMethod]
-    public void Iso_Date_With_Named_Captures()
+    public void Iso_Date_With_Saved_Parts()
     {
-        var fourDigits = new SubPattern().AnyDigit(Exactly(4));
-        var twoDigits = new SubPattern().AnyDigit(Exactly(2));
+        var fourDigits = new TextPattern().Exactly(4).Digit();
+        var twoDigits = new TextPattern().Exactly(2).Digit();
 
-        var isoDate = new MatchThesePatterns()
-            .StartOfText()
-            .CaptureAs("year", fourDigits)
-            .TheCharacter('-')
-            .CaptureAs("month", twoDigits)
-            .TheCharacter('-')
-            .CaptureAs("day", twoDigits)
-            .EndOfText();
+        var isoDate = new TextPattern()
+            .SaveAs("year", fourDigits)
+            .Text("-")
+            .SaveAs("month", twoDigits)
+            .Text("-")
+            .SaveAs("day", twoDigits);
 
-        Assert.AreEqual(@"\A(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})\z", isoDate.ToString());
-        var match = isoDate.ToRegex().Match("2026-10-12");
-        Assert.AreEqual("2026", match.Groups["year"].Value);
-        Assert.AreEqual("10", match.Groups["month"].Value);
-        Assert.AreEqual("12", match.Groups["day"].Value);
-        Assert.IsFalse(isoDate.IsMatch("2026-1-12"));
-        Assert.IsFalse(isoDate.IsMatch("2026-10-12\n"));
+        Assert.AreEqual("(?<year>[0-9]{4})-(?<month>[0-9]{2})-(?<day>[0-9]{2})", isoDate.ToString());
+        var found = isoDate.FindFirst("Due on 2026-10-12.");
+        Assert.AreEqual("2026", found?.Saved("year"));
+        Assert.AreEqual("10", found?.Saved("month"));
+        Assert.AreEqual("12", found?.Saved("day"));
+        Assert.IsFalse(isoDate.MatchesWholeText("2026-1-12"));
+        Assert.IsFalse(isoDate.MatchesWholeText("2026-10-12\n"));
     }
 
     [TestMethod]
     public void Us_Phone_Number()
     {
-        var usPhone = new MatchThesePatterns()
-            .StartOfText()
-            .TheCharacter('(', Optional)
-            .AnyDigit(Exactly(3))
-            .TheCharacter(')', Optional)
-            .OneOfTheseCharacters("-. ", Optional)
-            .AnyDigit(Exactly(3))
-            .OneOfTheseCharacters("-. ", Optional)
-            .AnyDigit(Exactly(4))
-            .EndOfText();
+        var usPhone = new TextPattern()
+            .Optional().Text("(")
+            .Exactly(3).Digit()
+            .Optional().Text(")")
+            .Optional().OneOfTheseCharacters("-. ")
+            .Exactly(3).Digit()
+            .Optional().OneOfTheseCharacters("-. ")
+            .Exactly(4).Digit();
 
-        Assert.AreEqual(@"\A\(?\d{3}\)?[-. ]?\d{3}[-. ]?\d{4}\z", usPhone.ToString());
-        Assert.IsTrue(usPhone.IsMatch("(555) 123-4567"));
-        Assert.IsTrue(usPhone.IsMatch("555.123.4567"));
-        Assert.IsTrue(usPhone.IsMatch("5551234567"));
-        Assert.IsFalse(usPhone.IsMatch("555-1234"));
-        Assert.IsFalse(usPhone.IsMatch("555_123_4567"));
+        Assert.AreEqual(@"\(?[0-9]{3}\)?[-. ]?[0-9]{3}[-. ]?[0-9]{4}", usPhone.ToString());
+        Assert.IsTrue(usPhone.MatchesWholeText("(555) 123-4567"));
+        Assert.IsTrue(usPhone.MatchesWholeText("555.123.4567"));
+        Assert.IsTrue(usPhone.MatchesWholeText("5551234567"));
+        Assert.IsFalse(usPhone.MatchesWholeText("555-1234"));
+        Assert.IsFalse(usPhone.MatchesWholeText("555_123_4567"));
     }
 
     [TestMethod]
     public void Either_Or_Ignoring_Case()
     {
-        var catsOrDogs = new MatchThesePatterns()
+        var catsOrDogs = new TextPattern()
             .IgnoringCase()
-            .WordBoundary()
+            .StartOfWord()
             .EitherOf("cat", "dog")
-            .TheCharacter('s', Optional)
-            .WordBoundary();
+            .Optional().Text("s")
+            .EndOfWord();
 
-        Assert.AreEqual(@"\b(?:cat|dog)s?\b", catsOrDogs.ToString());
-        Assert.IsTrue(catsOrDogs.IsMatch("I love Cats"));
-        Assert.IsTrue(catsOrDogs.IsMatch("I have two DOGS"));
-        Assert.IsFalse(catsOrDogs.IsMatch("concatenate"));
-        Assert.IsFalse(catsOrDogs.IsMatch("hotdogs"));
+        Assert.AreEqual(@"\b(?=\w)(?:cat|dog)s?\b(?<=\w)", catsOrDogs.ToString());
+        Assert.IsTrue(catsOrDogs.IsFoundIn("I love Cats"));
+        Assert.IsTrue(catsOrDogs.IsFoundIn("I have two DOGS"));
+        Assert.IsFalse(catsOrDogs.IsFoundIn("concatenate"));
+        Assert.IsFalse(catsOrDogs.IsFoundIn("hotdogs"));
     }
 
     [TestMethod]
     public void Repeated_Words()
     {
-        var aWord = new SubPattern().AnyWordCharacter(OneOrMore);
+        var aWord = new TextPattern().OneOrMore().Letter();
 
-        var repeatedWord = new MatchThesePatterns()
-            .WordBoundary()
-            .CaptureAs("word", aWord)
-            .AnyWhitespace(OneOrMore)
-            .TheSameTextAsCapture("word")
-            .WordBoundary();
+        var repeatedWord = new TextPattern()
+            .StartOfWord()
+            .SaveAs("word", aWord)
+            .OneOrMore().Whitespace()
+            .SameTextAsSaved("word")
+            .EndOfWord();
 
-        Assert.AreEqual(@"\b(?<word>\w+)\s+\k<word>\b", repeatedWord.ToString());
-        Assert.AreEqual("the", repeatedWord.ToRegex().Match("Paris in the the spring").Groups["word"].Value);
-        Assert.IsFalse(repeatedWord.IsMatch("the theory"));
-        Assert.IsFalse(repeatedWord.IsMatch("is island"));
+        Assert.AreEqual(@"\b(?=\w)(?<word>\p{L}+)\s+\k<word>\b(?<=\w)", repeatedWord.ToString());
+        Assert.AreEqual("the", repeatedWord.FindFirst("Paris in the the spring")?.Saved("word"));
+        Assert.IsFalse(repeatedWord.IsFoundIn("the theory"));
+        Assert.IsFalse(repeatedWord.IsFoundIn("is island"));
     }
 
     [TestMethod]
     public void Password_Rule()
     {
-        var aDigitSomewhereAhead = new SubPattern().AnyCharacter(ZeroOrMore).AnyDigit();
-        var aLowercaseLetterSomewhereAhead = new SubPattern().AnyCharacter(ZeroOrMore).AnyCharacterInRange('a', 'z');
+        var aDigitSomewhereAhead = new TextPattern().ZeroOrMore().AnyCharacter().Digit();
+        var aLowercaseLetterSomewhereAhead = new TextPattern().ZeroOrMore().AnyCharacter().AnyCharacterInRange('a', 'z');
 
-        var password = new MatchThesePatterns()
-            .StartOfText()
+        var password = new TextPattern()
             .IfFollowedBy(aDigitSomewhereAhead)
             .IfFollowedBy(aLowercaseLetterSomewhereAhead)
-            .AnyCharacter(AtLeast(8))
-            .EndOfText();
+            .AtLeast(8).AnyCharacter();
 
-        Assert.AreEqual(@"\A(?=.*\d)(?=.*[a-z]).{8,}\z", password.ToString());
-        Assert.IsTrue(password.IsMatch("passw0rd"));
-        Assert.IsFalse(password.IsMatch("password"));
+        Assert.AreEqual(@"(?=[\s\S]*[0-9])(?=[\s\S]*[a-z])[\s\S]{8,}", password.ToString());
+        Assert.IsTrue(password.MatchesWholeText("passw0rd"));
+        Assert.IsFalse(password.MatchesWholeText("password"));
     }
 
     [TestMethod]
-    public void Cheat_Sheet_Rows()
+    public void Find_And_Replace()
     {
-        var start = new MatchThesePatterns();
-        Assert.AreEqual(@"(?:www\.)?", start.TheText("www.", Optional).ToString());
-        Assert.AreEqual(".{8,}", start.AnyCharacter(AtLeast(8)).ToString());
-        Assert.AreEqual("[^<>]+", start.AnyCharacterExcept("<>", OneOrMore).ToString());
-        Assert.AreEqual("[a-z]", start.AnyCharacterInRange('a', 'z').ToString());
-        Assert.AreEqual(@"(?<=\$)", start.IfPrecededBy("$").ToString());
-        Assert.AreEqual(@"(?<!\$)", start.IfNotPrecededBy("$").ToString());
-        Assert.AreEqual(@"(?:\p{IsGreek})", start.RawRegex(@"\p{IsGreek}").ToString());
-        Assert.AreEqual("+?", OneOrMore.AsFewAsPossible().ToString());
+        var fourDigitsAndHyphen = new TextPattern().Exactly(4).Digit().Text("-");
+
+        var cardNumber = new TextPattern()
+            .Exactly(3).Pattern(fourDigitsAndHyphen)
+            .Exactly(4).Digit();
+
+        Assert.AreEqual("(?:[0-9]{4}-){3}[0-9]{4}", cardNumber.ToString());
+        Assert.AreEqual("Card [hidden] was used.", cardNumber.ReplaceAll("Card 1234-5678-9012-3456 was used.", "[hidden]"));
     }
 }

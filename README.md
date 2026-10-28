@@ -4,71 +4,72 @@
 [![CI](https://github.com/nzmattgrant/FluidRegex/actions/workflows/ci.yml/badge.svg)](https://github.com/nzmattgrant/FluidRegex/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/nzmattgrant/FluidRegex/blob/master/LICENSE)
 
-Build .NET regular expressions with method chains that read like an English description of the text you want to find.
+Build .NET regular expressions with method chains that read like a description of the text you want to find.
+You do not need to know regex syntax.
 
 ```csharp
 using FluidRegex;
-using static FluidRegex.NumberOfTimes;
 
-var isoDate = new MatchThesePatterns()
-    .StartOfText()
-    .AnyDigit(Exactly(4)).TheCharacter('-')
-    .AnyDigit(Exactly(2)).TheCharacter('-')
-    .AnyDigit(Exactly(2))
-    .EndOfText();
+var isoDate = new TextPattern()
+    .Exactly(4).Digit().Text("-")
+    .Exactly(2).Digit().Text("-")
+    .Exactly(2).Digit();
 
-isoDate.IsMatch("2026-10-12");   // true
-isoDate.ToString();              // \A\d{4}-\d{2}-\d{2}\z
+isoDate.MatchesWholeText("2026-10-12");   // true
+isoDate.ToString();                       // [0-9]{4}-[0-9]{2}-[0-9]{2}
 ```
 
-The result is an ordinary `System.Text.RegularExpressions.Regex`. The package has no dependencies.
+FluidRegex builds an ordinary `System.Text.RegularExpressions.Regex`. The package has no dependencies.
 
 ## Why FluidRegex
 
-Regexes are dense, and the mistakes in them are easy to make and hard to see. Here is an email check written by hand:
+Regexes are dense. Mistakes in them are easy to make and hard to see. Here is an email check written by hand:
 
 ```text
 ^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$
 ```
 
-And the same pattern in FluidRegex:
+Here is a similar check in FluidRegex:
 
 ```csharp
-var wordsWithAllowedStartSymbols = new SubPattern()
-    .OneOfTheseCharacters("-+.'")
-    .AnyWordCharacter(OneOrMore);
-var wordsWithHyphenAndDots = new SubPattern()
-    .OneOfTheseCharacters("-.")
-    .AnyWordCharacter(OneOrMore);
+var word = new TextPattern()
+    .OneOrMore().OneOfTheseCharacters(new CharacterSet().Letters().Digits().Characters("_"));
+var symbolThenWord = new TextPattern().OneOfTheseCharacters("-+.'").Pattern(word);
+var dotOrHyphenThenWord = new TextPattern().OneOfTheseCharacters("-.").Pattern(word);
 
-var email = new MatchThesePatterns()
-    .StartOfText()
-    .AnyWordCharacter(OneOrMore)
-    .Group(wordsWithAllowedStartSymbols, ZeroOrMore)
-    .TheCharacter('@')
-    .AnyWordCharacter(OneOrMore)
-    .Group(wordsWithHyphenAndDots, ZeroOrMore)
-    .TheCharacter('.')
-    .AnyWordCharacter(OneOrMore)
-    .Group(wordsWithHyphenAndDots, ZeroOrMore)
-    .EndOfText();
-// \A\w+(?:[-+.']\w+)*@\w+(?:[-.]\w+)*\.\w+(?:[-.]\w+)*\z
+var email = new TextPattern()
+    .Pattern(word)
+    .ZeroOrMore().Pattern(symbolThenWord)
+    .Text("@")
+    .Pattern(word)
+    .ZeroOrMore().Pattern(dotOrHyphenThenWord)
+    .Text(".")
+    .Pattern(word)
+    .ZeroOrMore().Pattern(dotOrHyphenThenWord);
+
+email.MatchesWholeText("john.smith@example.co.uk");   // true
+email.MatchesWholeText("junk john@example.com");      // false
 ```
 
-The builder also handles the details that are easy to get wrong:
+FluidRegex also prevents the mistakes that are easy to make:
 
-- **Literal text is always escaped.** For example, `TheText("a+b")` matches the text `a+b`.
-- **Counts apply to the whole piece.** `TheText("abc", OneOrMore)` emits `(?:abc)+`, not `abc+`.
-- **Either-or is always grouped.** `|` can never swallow its neighbours.
-- **Sub-patterns are reusable.** Builders are immutable, so you can share them freely, even across threads.
-- **Mistakes throw at the call that made them.** For example, writing `OneOfTheseCharacters("a-z")` instead of a range
-  throws with a hint pointing you to the range method.
+- **Text is matched as written.** `Text("a+b")` finds the text `a+b`. You do not escape anything.
+- **A count covers the whole piece.** `OneOrMore().Text("abc")` repeats `abc`, not only the `c`.
+- **A count comes before its piece.** After `OneOrMore()`, the method list shows only the pieces that a count can
+  apply to. `OneOrMore().StartOfText()` does not compile.
+- **Checking input and searching text are different methods.** `MatchesWholeText` checks all of the text, so an email
+  check cannot accept `"junk a@b.com junk"` by accident. `IsFoundIn` searches.
+- **`Digit()` matches only 0 to 9.** Plain `\d` also matches Arabic, Thai and other digits.
+- **`AnyCharacter()` matches any character.** Plain `.` does not match a line break.
+- **Mistakes throw at the call that made them.** For example, `OneOfTheseCharacters("a-z")` throws, and the message
+  tells you to use `AnyCharacterInRange('a', 'z')`.
+- **Patterns are reusable.** A pattern never changes, so you can share it, also across threads.
 
 Compared with [VerbalExpressions](https://github.com/VerbalExpressions/CSharpVerbalExpressions), FluidRegex:
 
-- names methods after the text they match;
-- applies a count to the whole item, not just its last character;
-- builds pieces as reusable sub-patterns instead of start/end calls.
+- names methods after the text they match.
+- applies a count to the whole piece, not only to its last character.
+- builds groups from reusable patterns instead of start and end calls.
 
 ## Install
 
@@ -76,69 +77,93 @@ Compared with [VerbalExpressions](https://github.com/VerbalExpressions/CSharpVer
 dotnet add package FluidRegex
 ```
 
-FluidRegex supports netstandard2.0, so it runs on .NET Framework 4.6.1+, Mono and Unity. It also targets net10.0.
+FluidRegex supports netstandard2.0, so it runs on .NET Framework 4.6.1 and later, Mono and Unity. It also targets
+net10.0.
 
 ## Quick start
 
-1. Add `using FluidRegex;` and `using static FluidRegex.NumberOfTimes;`. The second lets counts read as plain words,
-   for example `AnyDigit(Exactly(4))` and `TheText("www.", Optional)`.
-2. Start with `new MatchThesePatterns()` and add the pieces in reading order.
-3. Call `IsMatch(text)`, `ToRegex()` for the full `Regex` API, or `ToString()` for the pattern text.
+1. Add `using FluidRegex;`.
+2. Start with `new TextPattern()`.
+3. Add the pieces in reading order.
+4. To repeat a piece, put a count before it: `.Exactly(4).Digit()`.
+5. Use the pattern:
+   - `MatchesWholeText(text)` checks that all of the text fits the pattern, for example an email address in a form.
+   - `IsFoundIn(text)` checks that the pattern is somewhere in the text.
+   - `FindFirst(text)` and `FindAll(text)` give the text that the pattern found.
+   - `ReplaceAll(text, replacement)` replaces each place that the pattern found.
 
-Every call returns a new builder and leaves the original unchanged. The count is always the last argument and
-defaults to `Once`.
+Each call gives a new pattern. The original pattern does not change.
 
 ## Cheat sheet
 
-| You write | Reads as | Emits |
+**Pieces.** You can put a count before each piece.
+
+| You write | Finds | Emits |
+| --- | --- | --- |
+| `Text("www.")` | the text "www." | `www\.` |
+| `AnyCharacter()` | any character, also a line break | `[\s\S]` |
+| `AnyCharacterExceptLineBreak()` | any character except a line break | `[^\r\n]` |
+| `Digit()` / `AnyCharacterExceptDigit()` | a digit from 0 to 9 / any other character | `[0-9]` / `[^0-9]` |
+| `Letter()` / `AnyCharacterExceptLetter()` | a letter in any language / any other character | `\p{L}` / `\P{L}` |
+| `UppercaseLetter()` / `LowercaseLetter()` | an uppercase / lowercase letter | `\p{Lu}` / `\p{Ll}` |
+| `LetterOrDigit()` | a letter, or a digit from 0 to 9 | `[\p{L}0-9]` |
+| `Whitespace()` / `AnyCharacterExceptWhitespace()` | a space, tab or line break / any other character | `\s` / `\S` |
+| `LineBreak()` | a line break in any style | `(?:\r\n\|\r\|\n)` |
+| `OneOfTheseCharacters("-+.'")` | one of these characters | `[-+.']` |
+| `OneOfTheseCharacters(set)` | one of the characters in a `CharacterSet` | `[...]` |
+| `AnyCharacterExcept("<>")` | any character except < and > | `[^<>]` |
+| `AnyCharacterInRange('a', 'z')` | any character from a to z | `[a-z]` |
+| `EitherOf("cat", "dog")` | "cat" or "dog" | `(?:cat\|dog)` |
+| `Pattern(otherPattern)` | a pattern that you made before | its content |
+| `SaveAs("year", otherPattern)` | a pattern, and saves its text as "year" | `(?<year>...)` |
+| `SameTextAsSaved("word")` | the same text that was saved as "word" | `\k<word>` |
+| `RawRegex(@"\p{IsGreek}")` | raw .NET regex, for experts | `(?:\p{IsGreek})` |
+
+**Counts.** Put a count before the piece that it applies to.
+
+| You write | The next piece | Emits |
+| --- | --- | --- |
+| `Optional()` | can be missing | `?` |
+| `ZeroOrMore()` | any number of times, or not at all | `*` |
+| `OneOrMore()` | one time or more | `+` |
+| `Exactly(4)` | exactly 4 times | `{4}` |
+| `AtLeast(8)` | 8 times or more | `{8,}` |
+| `AtMost(3)` | 0 to 3 times | `{0,3}` |
+| `Between(2, 6)` | 2 to 6 times | `{2,6}` |
+
+A count matches as many times as possible. To match as few times as possible, add `.AsFewAsPossible()` after a count
+that can change. For example, `Text("<").OneOrMore().AsFewAsPossible().AnyCharacter().Text(">")` finds `<a>` in
+`<a><b>`. Without `AsFewAsPossible()`, it finds all of `<a><b>`.
+
+**Positions and conditions.** These match a place in the text, not characters, so they take no count.
+
+| You write | Matches | Emits |
 | --- | --- | --- |
 | `StartOfText()` / `EndOfText()` | at the start / end of the text | `\A` / `\z` |
 | `StartOfLine()` / `EndOfLine()` | at the start / end of a line (`\r\n`, `\n` or `\r`) | lookarounds |
-| `WordBoundary()` / `NotAWordBoundary()` | at / not at the edge of a word | `\b` / `\B` |
-| `TheText("www.", Optional)` | the text "www.", optional | `(?:www\.)?` |
-| `TheCharacter('@')` | the character @ | `@` |
-| `AnyCharacter(AtLeast(8))` | any character except a newline, at least 8 times | `.{8,}` |
-| `AnyCharacterIncludingNewline()` | any character at all | `[\s\S]` |
-| `AnyDigit(Exactly(4))` / `AnyNonDigit()` | any digit, exactly 4 times / any non-digit | `\d{4}` / `\D` |
-| `AnyLetter()` / `AnyNonLetter()` | any letter / any non-letter | `\p{L}` / `\P{L}` |
-| `AnyUppercaseLetter()` / `AnyLowercaseLetter()` | any uppercase / lowercase letter | `\p{Lu}` / `\p{Ll}` |
-| `AnyWordCharacter(OneOrMore)` / `AnyNonWordCharacter()` | letters, digits or underscores / anything else | `\w+` / `\W` |
-| `AnyWhitespace()` / `AnyNonWhitespace()` | any whitespace / any non-whitespace | `\s` / `\S` |
-| `AnyLineBreak()` | a line break in any style | `(?:\r\n\|\r\|\n)` |
-| `OneOfTheseCharacters("-+.'")` | one of these characters | `[-+.']` |
-| `OneOfTheseCharacters(set, Between(2, 256))` | one of the characters in a `CharacterSet`, 2 to 256 times | `[...]{2,256}` |
-| `AnyCharacterExcept("<>", OneOrMore)` | any character except < or > | `[^<>]+` |
-| `AnyCharacterInRange('a', 'z')` | any character from a to z | `[a-z]` |
-| `Group(subPattern, ZeroOrMore)` | the sub-pattern, zero or more times | `(?:...)*` |
-| `Capture(subPattern)` | capture the sub-pattern's text | `(...)` |
-| `CaptureAs("year", subPattern)` | capture it as "year" | `(?<year>...)` |
-| `EitherOf("cat", "dog")` | either "cat" or "dog" | `(?:cat\|dog)` |
-| `TheSameTextAsCapture("word")` | the same text as the capture "word" | `\k<word>` |
-| `IfFollowedBy("Y")` / `IfNotFollowedBy("Y")` | only if "Y" comes / doesn't come next | `(?=Y)` / `(?!Y)` |
-| `IfPrecededBy("$")` / `IfNotPrecededBy("$")` | only if "$" comes / doesn't come just before | `(?<=\$)` / `(?<!\$)` |
-| `RawRegex(@"\p{IsGreek}")` | this raw regex | `(?:\p{IsGreek})` |
+| `StartOfWord()` / `EndOfWord()` | at the start / end of a word | `\b(?=\w)` / `\b(?<=\w)` |
+| `IfFollowedBy("Y")` / `IfNotFollowedBy("Y")` | only if "Y" comes / does not come next | `(?=Y)` / `(?!Y)` |
+| `IfPrecededBy("$")` / `IfNotPrecededBy("$")` | only if "$" comes / does not come just before | `(?<=\$)` / `(?<!\$)` |
 
-**Counts** (`NumberOfTimes`):
+**Settings.**
 
-| Count | Emits |
+- `IgnoringCase()` treats uppercase and lowercase as the same. If you use the pattern inside another pattern, only
+  its own part ignores case.
+- `WithTimeLimit(TimeSpan)` stops a search that takes too long.
+
+**Results.**
+
+| You write | Gives |
 | --- | --- |
-| `Once` (the default) | nothing |
-| `Optional` | `?` |
-| `ZeroOrMore` | `*` |
-| `OneOrMore` | `+` |
-| `Exactly(n)` | `{n}` |
-| `AtLeast(n)` | `{n,}` |
-| `AtMost(n)` | `{0,n}` |
-| `Between(min, max)` | `{min,max}` |
+| `MatchesWholeText(text)` | `true` if all of the text fits the pattern |
+| `IsFoundIn(text)` | `true` if the pattern is somewhere in the text |
+| `FindFirst(text)` | the first `FoundText`, or `null` |
+| `FindAll(text)` | each `FoundText`, in order |
+| `ReplaceAll(text, replacement)` | the text, with the replacement in each place that the pattern found |
+| `ToRegex()` | the .NET `Regex`, for everything else |
+| `ToString()` | the regex pattern text |
 
-Add `.AsFewAsPossible()` to any count that isn't fixed for the lazy form, for example `OneOrMore.AsFewAsPossible()`
-emits `+?`.
-
-**Options** go straight after `new MatchThesePatterns()`. They never change the pattern text.
-
-- `IgnoringCase()`
-- `WithOptions(RegexOptions...)`
-- `WithMatchTimeout(TimeSpan)`
+A `FoundText` has `Text`, `Position` and `Saved("name")`.
 
 ## Recipes
 
@@ -146,143 +171,151 @@ emits `+?`.
 
 ```csharp
 var hostCharacters = new CharacterSet()
-    .TheCharacter('-')
-    .CharactersInRange('a', 'z').CharactersInRange('A', 'Z').CharactersInRange('0', '9')
-    .TheCharacters("@:%._+~#=");
+    .CharactersInRange('a', 'z').CharactersInRange('A', 'Z').Digits()
+    .Characters("-@:%._+~#=");
 var pathCharacters = new CharacterSet()
-    .TheCharacter('-')
-    .CharactersInRange('a', 'z').CharactersInRange('A', 'Z').CharactersInRange('0', '9')
-    .TheCharacters("@:%_+.~#()?&/=");
-var path = new SubPattern().OneOfTheseCharacters(pathCharacters, ZeroOrMore);
+    .CharactersInRange('a', 'z').CharactersInRange('A', 'Z').Digits()
+    .Characters("-@:%_+.~#()?&/=");
+var path = new TextPattern().ZeroOrMore().OneOfTheseCharacters(pathCharacters);
 
-var url = new MatchThesePatterns()
-    .TheText("http")
-    .TheCharacter('s', Optional)
-    .TheText("://")
-    .TheText("www.", Optional)
-    .OneOfTheseCharacters(hostCharacters, Between(2, 256))
-    .TheCharacter('.')
-    .AnyCharacterInRange('a', 'z', Between(2, 6))
-    .WordBoundary()
-    .Capture(path);
-// https?://(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#()?&/=]*)
+var url = new TextPattern()
+    .Text("http")
+    .Optional().Text("s")
+    .Text("://")
+    .Optional().Text("www.")
+    .Between(2, 256).OneOfTheseCharacters(hostCharacters)
+    .Text(".")
+    .Between(2, 6).AnyCharacterInRange('a', 'z')
+    .EndOfWord()
+    .SaveAs("path", path);
+// https?://(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b(?<=\w)(?<path>[-a-zA-Z0-9@:%_+.~#()?&/=]*)
 
-url.ToRegex().Match("https://www.example.com/path?q=1").Groups[1].Value;   // "/path?q=1"
+url.FindFirst("Go to https://www.example.com/path?q=1")?.Saved("path");   // "/path?q=1"
 ```
 
-### ISO date with named captures
+### ISO date with saved parts
 
 ```csharp
-var fourDigits = new SubPattern().AnyDigit(Exactly(4));
-var twoDigits = new SubPattern().AnyDigit(Exactly(2));
+var fourDigits = new TextPattern().Exactly(4).Digit();
+var twoDigits = new TextPattern().Exactly(2).Digit();
 
-var isoDate = new MatchThesePatterns()
-    .StartOfText()
-    .CaptureAs("year", fourDigits)
-    .TheCharacter('-')
-    .CaptureAs("month", twoDigits)
-    .TheCharacter('-')
-    .CaptureAs("day", twoDigits)
-    .EndOfText();
-// \A(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})\z
+var isoDate = new TextPattern()
+    .SaveAs("year", fourDigits)
+    .Text("-")
+    .SaveAs("month", twoDigits)
+    .Text("-")
+    .SaveAs("day", twoDigits);
+// (?<year>[0-9]{4})-(?<month>[0-9]{2})-(?<day>[0-9]{2})
 
-isoDate.ToRegex().Match("2026-10-12").Groups["year"].Value;   // "2026"
+var found = isoDate.FindFirst("Due on 2026-10-12.");
+found?.Saved("year");    // "2026"
+found?.Saved("month");   // "10"
 ```
 
 ### US phone number
 
 ```csharp
-var usPhone = new MatchThesePatterns()
-    .StartOfText()
-    .TheCharacter('(', Optional)
-    .AnyDigit(Exactly(3))
-    .TheCharacter(')', Optional)
-    .OneOfTheseCharacters("-. ", Optional)
-    .AnyDigit(Exactly(3))
-    .OneOfTheseCharacters("-. ", Optional)
-    .AnyDigit(Exactly(4))
-    .EndOfText();
-// \A\(?\d{3}\)?[-. ]?\d{3}[-. ]?\d{4}\z
+var usPhone = new TextPattern()
+    .Optional().Text("(")
+    .Exactly(3).Digit()
+    .Optional().Text(")")
+    .Optional().OneOfTheseCharacters("-. ")
+    .Exactly(3).Digit()
+    .Optional().OneOfTheseCharacters("-. ")
+    .Exactly(4).Digit();
+// \(?[0-9]{3}\)?[-. ]?[0-9]{3}[-. ]?[0-9]{4}
 
-usPhone.IsMatch("(555) 123-4567");   // true
+usPhone.MatchesWholeText("(555) 123-4567");   // true
+usPhone.MatchesWholeText("555-1234");         // false
 ```
 
 ### Either-or, ignoring case
 
 ```csharp
-var catsOrDogs = new MatchThesePatterns()
+var catsOrDogs = new TextPattern()
     .IgnoringCase()
-    .WordBoundary()
+    .StartOfWord()
     .EitherOf("cat", "dog")
-    .TheCharacter('s', Optional)
-    .WordBoundary();
-// \b(?:cat|dog)s?\b
+    .Optional().Text("s")
+    .EndOfWord();
+// \b(?=\w)(?:cat|dog)s?\b(?<=\w)
 
-catsOrDogs.IsMatch("I have two DOGS");   // true
-catsOrDogs.IsMatch("concatenate");       // false
+catsOrDogs.IsFoundIn("I have two DOGS");   // true
+catsOrDogs.IsFoundIn("concatenate");       // false
 ```
 
 ### Repeated words
 
 ```csharp
-var aWord = new SubPattern().AnyWordCharacter(OneOrMore);
+var aWord = new TextPattern().OneOrMore().Letter();
 
-var repeatedWord = new MatchThesePatterns()
-    .WordBoundary()
-    .CaptureAs("word", aWord)
-    .AnyWhitespace(OneOrMore)
-    .TheSameTextAsCapture("word")
-    .WordBoundary();
-// \b(?<word>\w+)\s+\k<word>\b
+var repeatedWord = new TextPattern()
+    .StartOfWord()
+    .SaveAs("word", aWord)
+    .OneOrMore().Whitespace()
+    .SameTextAsSaved("word")
+    .EndOfWord();
+// \b(?=\w)(?<word>\p{L}+)\s+\k<word>\b(?<=\w)
 
-repeatedWord.ToRegex().Match("Paris in the the spring").Groups["word"].Value;   // "the"
+repeatedWord.FindFirst("Paris in the the spring")?.Saved("word");   // "the"
 ```
 
 ### Password rule
 
 ```csharp
-var aDigitSomewhereAhead = new SubPattern().AnyCharacter(ZeroOrMore).AnyDigit();
-var aLowercaseLetterSomewhereAhead = new SubPattern().AnyCharacter(ZeroOrMore).AnyCharacterInRange('a', 'z');
+var aDigitSomewhereAhead = new TextPattern().ZeroOrMore().AnyCharacter().Digit();
+var aLowercaseLetterSomewhereAhead = new TextPattern().ZeroOrMore().AnyCharacter().AnyCharacterInRange('a', 'z');
 
-var password = new MatchThesePatterns()
-    .StartOfText()
+var password = new TextPattern()
     .IfFollowedBy(aDigitSomewhereAhead)
     .IfFollowedBy(aLowercaseLetterSomewhereAhead)
-    .AnyCharacter(AtLeast(8))
-    .EndOfText();
-// \A(?=.*\d)(?=.*[a-z]).{8,}\z
+    .AtLeast(8).AnyCharacter();
+// (?=[\s\S]*[0-9])(?=[\s\S]*[a-z])[\s\S]{8,}
 
-password.IsMatch("passw0rd");   // true
-password.IsMatch("password");   // false
+password.MatchesWholeText("passw0rd");   // true
+password.MatchesWholeText("password");   // false
+```
+
+### Find and replace
+
+```csharp
+var fourDigitsAndHyphen = new TextPattern().Exactly(4).Digit().Text("-");
+
+var cardNumber = new TextPattern()
+    .Exactly(3).Pattern(fourDigitsAndHyphen)
+    .Exactly(4).Digit();
+// (?:[0-9]{4}-){3}[0-9]{4}
+
+cardNumber.ReplaceAll("Card 1234-5678-9012-3456 was used.", "[hidden]");   // "Card [hidden] was used."
 ```
 
 ## Escaping and safety
 
-- **Text arguments are literal.** Every string you pass is matched exactly as written. This covers `TheText`,
-  `EitherOf`, the `If...` conditions and `OneOfTheseCharacters`.
-- **Character strings never form ranges.** A string such as `"a-z"` throws instead of quietly meaning three
-  characters. Use `AnyCharacterInRange` or `CharacterSet.CharactersInRange` for ranges.
-- **`RawRegex` is the escape hatch.** It isn't escaped, but it is always wrapped in `(?:...)`, so a `|` or an inline
-  option inside it can't affect the rest of the pattern.
-- **`ToRegex()` reports problems with the pattern quoted.** That covers invalid raw regex and a reference that comes
-  before its capture. `ToString()` never throws.
-- **Use a match timeout for untrusted input,** to guard against catastrophic backtracking:
-  `new MatchThesePatterns().WithMatchTimeout(TimeSpan.FromSeconds(1))`.
-- **`RegexOptions.Singleline` is rejected,** because it would silently change what `AnyCharacter()` means. Use
-  `AnyCharacterIncludingNewline()` instead.
+- **Text arguments are matched as written.** This applies to `Text`, `EitherOf`, the `If...` conditions,
+  `OneOfTheseCharacters` and `AnyCharacterExcept`. The replacement in `ReplaceAll` is also used as written.
+- **Character strings never make ranges.** A string such as `"a-z"` throws. It does not quietly mean three
+  characters. For a range, use `AnyCharacterInRange` or `CharacterSet.CharactersInRange`.
+- **`RawRegex` is for experts.** FluidRegex does not escape it. FluidRegex always puts it in `(?:...)`, so a `|` or an
+  inline option in it cannot change the rest of the pattern.
+- **Problems with a finished pattern are reported when you first use the pattern.** The message quotes the pattern.
+  Examples are `SameTextAsSaved("word")` before `SaveAs("word", ...)`, a name that is never saved, and invalid raw
+  regex. `ToString()` never throws.
+- **Use a time limit for untrusted input.** Some patterns become very slow on some input. A time limit stops the search:
+  `new TextPattern().WithTimeLimit(TimeSpan.FromSeconds(1))`.
 
 ## Unicode notes
 
-- **`AnyDigit()`, `AnyWordCharacter()` and `AnyLetter()` follow .NET's Unicode rules.** They match digits and letters
-  from every script, for example `é` and Arabic-Indic digits. For ASCII only, use
-  `AnyCharacterInRange('0', '9')` or `AnyCharacterInRange('a', 'z')`.
-- **Case classes follow `IgnoringCase()`.** With it, `AnyUppercaseLetter()` and `AnyLowercaseLetter()` match both
-  cases.
+- **`Letter()` follows Unicode.** It matches letters in every language, for example `é` and `ж`. For ASCII letters
+  only, use `AnyCharacterInRange('a', 'z')`.
+- **`Digit()` matches only 0 to 9.** For digits in every script, use `RawRegex(@"\d")`.
+- **`StartOfWord()` and `EndOfWord()` use the .NET word characters.** These are letters, digits and the underscore,
+  so `user_name` is one word.
+- **Case follows `IgnoringCase()`.** With it, `UppercaseLetter()` and `LowercaseLetter()` match both cases.
 
 ## Versioning
 
-FluidRegex is at 0.x while the English names settle, so minor versions may rename members. From 1.0.0 it follows
-semantic versioning.
+FluidRegex is at 0.x while the English names settle, so minor versions can rename members. From 1.0.0, FluidRegex
+follows semantic versioning.
 
 ## Contributing
 
@@ -290,7 +323,8 @@ semantic versioning.
 dotnet test FluidRegex.slnx
 ```
 
-The tests run on net10.0 and, on Windows, on net48 (the shipped netstandard2.0 build on .NET Framework).
+The tests run on net10.0. On Windows, they also run on net48, which tests the shipped netstandard2.0 build on .NET
+Framework.
 
 ## License
 

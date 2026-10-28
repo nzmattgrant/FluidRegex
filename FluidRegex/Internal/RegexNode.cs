@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text;
 
 namespace FluidRegex.Internal;
@@ -72,7 +71,7 @@ internal sealed class LookaroundNode(bool isBehind, bool isNegative, RegexNode c
     }
 }
 
-/// <summary>Several nodes one after another, such as the contents of a SubPattern.</summary>
+/// <summary>Several nodes one after another, such as the contents of a reused TextPattern.</summary>
 internal sealed class SequenceNode(NodeList nodes) : RegexNode
 {
     public NodeList Nodes => nodes;
@@ -120,12 +119,12 @@ internal sealed class QuantifiedNode(RegexNode inner, NumberOfTimes times) : Reg
 }
 
 /// <summary>
-/// A numbered (...) or named (?&lt;name&gt;...) capture. The count goes inside so the capture holds the whole run;
+/// A named capture (?&lt;name&gt;...), written by SaveAs. The count goes inside so the capture holds the whole run;
 /// when the count allows zero, the optional part moves outside so a missing capture reports Success == false.
 /// </summary>
-internal sealed class CaptureNode(string? name, RegexNode content, NumberOfTimes times) : RegexNode
+internal sealed class CaptureNode(string name, RegexNode content, NumberOfTimes times) : RegexNode
 {
-    public string? Name => name;
+    public string Name => name;
 
     public override bool IsAtom => true;
 
@@ -146,12 +145,7 @@ internal sealed class CaptureNode(string? name, RegexNode content, NumberOfTimes
 
     private void WriteCapture(StringBuilder builder, NumberOfTimes inner)
     {
-        builder.Append('(');
-        if (name is not null)
-        {
-            builder.Append("?<").Append(name).Append('>');
-        }
-
+        builder.Append("(?<").Append(name).Append('>');
         if (inner.IsOnce)
         {
             PatternWriter.WriteWithoutOuterAlternationGroup(builder, content);
@@ -210,27 +204,31 @@ internal sealed class AlternationNode(RegexNode[] alternatives) : RegexNode
     }
 }
 
-/// <summary>The same text as an earlier capture, always written \k&lt;...&gt; so a following digit can't extend it.</summary>
-internal sealed class BackreferenceNode : RegexNode
+/// <summary>The same text as an earlier named capture, written by SameTextAsSaved: \k&lt;name&gt;.</summary>
+internal sealed class BackreferenceNode(string name) : RegexNode
 {
-    private BackreferenceNode(string? name, int number)
-    {
-        Name = name;
-        Number = number;
-    }
-
-    public string? Name { get; }
-
-    public int Number { get; }
+    public string Name => name;
 
     public override bool IsAtom => true;
 
-    public static BackreferenceNode ToName(string name) => new(name, 0);
+    public override void Write(StringBuilder builder) => builder.Append(@"\k<").Append(name).Append('>');
+}
 
-    public static BackreferenceNode ToNumber(int number) => new(null, number);
+/// <summary>A reused pattern that ignores case, written (?i:...) so the setting covers only that pattern.</summary>
+internal sealed class IgnoreCaseNode(RegexNode content) : RegexNode
+{
+    public override bool IsAtom => true;
 
-    public override void Write(StringBuilder builder) =>
-        builder.Append(@"\k<").Append(Name ?? Number.ToString(CultureInfo.InvariantCulture)).Append('>');
+    public override bool IsZeroWidth => content.IsZeroWidth;
+
+    public override IEnumerable<RegexNode> Children => [content];
+
+    public override void Write(StringBuilder builder)
+    {
+        builder.Append("(?i:");
+        PatternWriter.WriteWithoutOuterAlternationGroup(builder, content);
+        builder.Append(')');
+    }
 }
 
 /// <summary>Raw regex text, always wrapped in (?:...) so a '|' or an inline option can't leak into the rest.</summary>

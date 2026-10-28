@@ -24,7 +24,7 @@
     <Version>0.1.0</Version>
     <Authors>nzmattgrant</Authors>
     <Copyright>Copyright (c) 2018-2026 nzmattgrant</Copyright>
-    <Description>Build .NET regular expressions with fluent method chains that read like an English description of the text you want to find. Literal text is always escaped, counts always cover the whole item, sub-patterns are reusable, and the result is an ordinary System.Text.RegularExpressions.Regex. No dependencies.</Description>
+    <Description>Build .NET regular expressions with method chains that read like a description of the text you want to find. You do not need to know regex syntax. Text is matched as written, a count always covers the whole piece, patterns are reusable, and the result is an ordinary System.Text.RegularExpressions.Regex. No dependencies.</Description>
     <PackageTags>regex;regular-expression;regular-expressions;fluent;fluent-api;fluent-interface;builder;readable;readable-regex;pattern</PackageTags>
     <PackageProjectUrl>https://github.com/nzmattgrant/FluidRegex</PackageProjectUrl>
     <RepositoryUrl>https://github.com/nzmattgrant/FluidRegex.git</RepositoryUrl>

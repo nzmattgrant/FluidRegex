@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using static FluidRegex.NumberOfTimes;
 
 namespace FluidRegex.Test;
 
@@ -8,15 +6,15 @@ namespace FluidRegex.Test;
 [TestClass]
 public class ArgumentValidationTests
 {
-    private static readonly MatchThesePatterns Start = new();
-    private static readonly SubPattern Empty = new();
-    private static readonly SubPattern Boundary = new SubPattern().WordBoundary();
-    private static readonly SubPattern Ab = new SubPattern().TheText("ab");
+    private static readonly TextPattern Start = new();
+    private static readonly TextPattern Empty = new();
+    private static readonly TextPattern Boundary = new TextPattern().StartOfWord();
+    private static readonly TextPattern Ab = new TextPattern().Text("ab");
 
     public static IEnumerable<object[]> InvalidCalls()
     {
-        yield return Row("TheText(null)", () => Start.TheText(null!), typeof(ArgumentNullException), "text");
-        yield return Row("TheText(\"\")", () => Start.TheText(""), typeof(ArgumentException), "text");
+        yield return Row("Text(null)", () => Start.Text(null!), typeof(ArgumentNullException), "text");
+        yield return Row("Text(\"\")", () => Start.Text(""), typeof(ArgumentException), "text");
         yield return Row("OneOfTheseCharacters(\"\")", () => Start.OneOfTheseCharacters(""), typeof(ArgumentException), "characters");
         yield return Row("OneOfTheseCharacters(\"a-z\")", () => Start.OneOfTheseCharacters("a-z"), typeof(ArgumentException), "characters");
         yield return Row("OneOfTheseCharacters((string)null)", () => Start.OneOfTheseCharacters((string)null!), typeof(ArgumentNullException), "characters");
@@ -24,23 +22,28 @@ public class ArgumentValidationTests
         yield return Row("AnyCharacterExcept((CharacterSet)null)", () => Start.AnyCharacterExcept((CharacterSet)null!), typeof(ArgumentNullException), "characters");
         yield return Row("AnyCharacterInRange('z', 'a')", () => Start.AnyCharacterInRange('z', 'a'), typeof(ArgumentOutOfRangeException), "to");
         yield return Row("CharactersInRange('z', 'a')", () => new CharacterSet().CharactersInRange('z', 'a'), typeof(ArgumentOutOfRangeException), "to");
-        yield return Row("TheCharacters(\"0-9\")", () => new CharacterSet().TheCharacters("0-9"), typeof(ArgumentException), "characters");
-        yield return Row("Group(null)", () => Start.Group(null!), typeof(ArgumentNullException), "pattern");
-        yield return Row("Group(empty)", () => Start.Group(Empty), typeof(ArgumentException), "pattern");
-        yield return Row("Group(boundary, OneOrMore)", () => Start.Group(Boundary, OneOrMore), typeof(ArgumentException), "times");
-        yield return Row("Capture(ab, Exactly(0))", () => Start.Capture(Ab, Exactly(0)), typeof(ArgumentOutOfRangeException), "times");
-        yield return Row("CaptureAs(\"1a\", ab)", () => Start.CaptureAs("1a", Ab), typeof(ArgumentException), "name");
-        yield return Row("CaptureAs(\"a-b\", ab)", () => Start.CaptureAs("a-b", Ab), typeof(ArgumentException), "name");
+        yield return Row("Characters(\"0-9\")", () => new CharacterSet().Characters("0-9"), typeof(ArgumentException), "characters");
+        yield return Row("Pattern(null)", () => Start.Pattern(null!), typeof(ArgumentNullException), "pattern");
+        yield return Row("Pattern(empty)", () => Start.Pattern(Empty), typeof(ArgumentException), "pattern");
+        yield return Row("OneOrMore().Pattern(boundary)", () => Start.OneOrMore().Pattern(Boundary), typeof(ArgumentException), "pattern");
+        yield return Row("SaveAs(\"1a\", ab)", () => Start.SaveAs("1a", Ab), typeof(ArgumentException), "name");
+        yield return Row("SaveAs(\"a-b\", ab)", () => Start.SaveAs("a-b", Ab), typeof(ArgumentException), "name");
         yield return Row("EitherOf(\"a\", \"\")", () => Start.EitherOf("a", ""), typeof(ArgumentException), "texts");
         yield return Row("EitherOf(ab, empty)", () => Start.EitherOf(Ab, Empty), typeof(ArgumentException), "patterns");
-        yield return Row("TheSameTextAsCapture(0)", () => Start.TheSameTextAsCapture(0), typeof(ArgumentOutOfRangeException), "captureNumber");
-        yield return Row("TheSameTextAsCapture(\"my name\")", () => Start.TheSameTextAsCapture("my name"), typeof(ArgumentException), "captureName");
+        yield return Row("OneOrMore().EitherOf(boundary, boundary)", () => Start.OneOrMore().EitherOf(Boundary, Boundary), typeof(ArgumentException), "patterns");
+        yield return Row("SameTextAsSaved(\"my name\")", () => Start.SameTextAsSaved("my name"), typeof(ArgumentException), "name");
         yield return Row("IfFollowedBy(\"\")", () => Start.IfFollowedBy(""), typeof(ArgumentException), "text");
         yield return Row("IfPrecededBy(empty)", () => Start.IfPrecededBy(Empty), typeof(ArgumentException), "pattern");
         yield return Row("RawRegex(\"\")", () => Start.RawRegex(""), typeof(ArgumentException), "regexPattern");
-        yield return Row("WithOptions(Singleline)", () => Start.WithOptions(RegexOptions.Singleline), typeof(ArgumentException), "options");
-        yield return Row("WithMatchTimeout(0)", () => Start.WithMatchTimeout(TimeSpan.Zero), typeof(ArgumentOutOfRangeException), "timeout");
-        yield return Row("Between(3, 2)", () => Between(3, 2), typeof(ArgumentOutOfRangeException), "maximum");
+        yield return Row("WithTimeLimit(0)", () => Start.WithTimeLimit(TimeSpan.Zero), typeof(ArgumentOutOfRangeException), "timeLimit");
+        yield return Row("Exactly(0)", () => Start.Exactly(0), typeof(ArgumentOutOfRangeException), "count");
+        yield return Row("AtLeast(-1)", () => Start.AtLeast(-1), typeof(ArgumentOutOfRangeException), "minimum");
+        yield return Row("AtMost(0)", () => Start.AtMost(0), typeof(ArgumentOutOfRangeException), "maximum");
+        yield return Row("Between(-1, 2)", () => Start.Between(-1, 2), typeof(ArgumentOutOfRangeException), "minimum");
+        yield return Row("Between(3, 2)", () => Start.Between(3, 2), typeof(ArgumentOutOfRangeException), "maximum");
+        yield return Row("Between(0, 0)", () => Start.Between(0, 0), typeof(ArgumentOutOfRangeException), "maximum");
+        yield return Row("FindFirst(null)", () => Ab.FindFirst(null!), typeof(ArgumentNullException), "text");
+        yield return Row("ReplaceAll(\"ab\", null)", () => Ab.ReplaceAll("ab", null!), typeof(ArgumentNullException), "replacement");
     }
 
     [TestMethod]

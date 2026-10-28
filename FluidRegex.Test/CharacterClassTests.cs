@@ -1,86 +1,84 @@
-using static FluidRegex.NumberOfTimes;
-
 namespace FluidRegex.Test;
 
 [TestClass]
 public class CharacterClassTests
 {
-    private static MatchThesePatterns Whole(Func<MatchThesePatterns, MatchThesePatterns> piece) =>
-        piece(new MatchThesePatterns().StartOfText()).EndOfText();
+    private static readonly TextPattern Start = new();
 
     [TestMethod]
     public void Each_Kind_Emits_Its_Token()
     {
-        var start = new MatchThesePatterns();
-        Assert.AreEqual(".", start.AnyCharacter().ToString());
-        Assert.AreEqual(@"[\s\S]", start.AnyCharacterIncludingNewline().ToString());
-        Assert.AreEqual(@"\d", start.AnyDigit().ToString());
-        Assert.AreEqual(@"\D", start.AnyNonDigit().ToString());
-        Assert.AreEqual(@"\p{L}", start.AnyLetter().ToString());
-        Assert.AreEqual(@"\P{L}", start.AnyNonLetter().ToString());
-        Assert.AreEqual(@"\p{Lu}", start.AnyUppercaseLetter().ToString());
-        Assert.AreEqual(@"\p{Ll}", start.AnyLowercaseLetter().ToString());
-        Assert.AreEqual(@"\w", start.AnyWordCharacter().ToString());
-        Assert.AreEqual(@"\W", start.AnyNonWordCharacter().ToString());
-        Assert.AreEqual(@"\s", start.AnyWhitespace().ToString());
-        Assert.AreEqual(@"\S", start.AnyNonWhitespace().ToString());
-        Assert.AreEqual(@"(?:\r\n|\r|\n)", start.AnyLineBreak().ToString());
+        Assert.AreEqual(@"[\s\S]", Start.AnyCharacter().ToString());
+        Assert.AreEqual(@"[^\r\n]", Start.AnyCharacterExceptLineBreak().ToString());
+        Assert.AreEqual("[0-9]", Start.Digit().ToString());
+        Assert.AreEqual("[^0-9]", Start.AnyCharacterExceptDigit().ToString());
+        Assert.AreEqual(@"\p{L}", Start.Letter().ToString());
+        Assert.AreEqual(@"\P{L}", Start.AnyCharacterExceptLetter().ToString());
+        Assert.AreEqual(@"\p{Lu}", Start.UppercaseLetter().ToString());
+        Assert.AreEqual(@"\p{Ll}", Start.LowercaseLetter().ToString());
+        Assert.AreEqual(@"[\p{L}0-9]", Start.LetterOrDigit().ToString());
+        Assert.AreEqual(@"\s", Start.Whitespace().ToString());
+        Assert.AreEqual(@"\S", Start.AnyCharacterExceptWhitespace().ToString());
+        Assert.AreEqual(@"(?:\r\n|\r|\n)", Start.LineBreak().ToString());
     }
 
     [TestMethod]
     public void Each_Kind_Takes_A_Count()
     {
-        Assert.AreEqual(@"\d{4}", new MatchThesePatterns().AnyDigit(Exactly(4)).ToString());
-        Assert.AreEqual(@"\w+", new MatchThesePatterns().AnyWordCharacter(OneOrMore).ToString());
-        Assert.AreEqual(".{8,}", new MatchThesePatterns().AnyCharacter(AtLeast(8)).ToString());
-        Assert.AreEqual(@"(?:\r\n|\r|\n)+", new MatchThesePatterns().AnyLineBreak(OneOrMore).ToString());
+        Assert.AreEqual("[0-9]{4}", Start.Exactly(4).Digit().ToString());
+        Assert.AreEqual(@"[\p{L}0-9]+", Start.OneOrMore().LetterOrDigit().ToString());
+        Assert.AreEqual(@"[\s\S]{8,}", Start.AtLeast(8).AnyCharacter().ToString());
+        Assert.AreEqual(@"(?:\r\n|\r|\n)+", Start.OneOrMore().LineBreak().ToString());
     }
 
     [TestMethod]
-    public void Letters_And_Digits_Follow_Unicode()
+    public void Letters_Follow_Unicode_But_Digits_Are_Only_0_To_9()
     {
-        Assert.IsTrue(Whole(p => p.AnyLetter()).IsMatch("é"));
-        Assert.IsTrue(Whole(p => p.AnyWordCharacter()).IsMatch("é"));
-        Assert.IsTrue(Whole(p => p.AnyDigit()).IsMatch("\u0663"), "Arabic-Indic digit three");
-        Assert.IsTrue(Whole(p => p.AnyWordCharacter()).IsMatch("_"));
-        Assert.IsFalse(Whole(p => p.AnyLetter()).IsMatch("_"));
-        Assert.IsTrue(Whole(p => p.AnyNonLetter()).IsMatch("_"));
-        Assert.IsTrue(Whole(p => p.AnyUppercaseLetter()).IsMatch("É"));
-        Assert.IsFalse(Whole(p => p.AnyUppercaseLetter()).IsMatch("é"));
-        Assert.IsTrue(Whole(p => p.AnyLowercaseLetter()).IsMatch("é"));
+        Assert.IsTrue(Start.OneOrMore().Digit().MatchesWholeText("0123456789"));
+        Assert.IsFalse(Start.Digit().MatchesWholeText("٣"), "Arabic-Indic digit three");
+        Assert.IsTrue(Start.AnyCharacterExceptDigit().MatchesWholeText("٣"));
+        Assert.IsTrue(Start.Letter().MatchesWholeText("é"));
+        Assert.IsFalse(Start.Letter().MatchesWholeText("_"));
+        Assert.IsTrue(Start.AnyCharacterExceptLetter().MatchesWholeText("_"));
+        Assert.IsTrue(Start.LetterOrDigit().MatchesWholeText("é"));
+        Assert.IsTrue(Start.LetterOrDigit().MatchesWholeText("7"));
+        Assert.IsFalse(Start.LetterOrDigit().MatchesWholeText("_"), "no hidden underscore");
+        Assert.IsTrue(Start.UppercaseLetter().MatchesWholeText("É"));
+        Assert.IsFalse(Start.UppercaseLetter().MatchesWholeText("é"));
+        Assert.IsTrue(Start.LowercaseLetter().MatchesWholeText("é"));
     }
 
     [TestMethod]
     public void Uppercase_Letter_Also_Matches_Lowercase_When_Ignoring_Case()
     {
-        var upper = new MatchThesePatterns().IgnoringCase().StartOfText().AnyUppercaseLetter().EndOfText();
-        Assert.IsTrue(upper.IsMatch("a"));
+        Assert.IsTrue(new TextPattern().IgnoringCase().UppercaseLetter().MatchesWholeText("a"));
     }
 
     [TestMethod]
-    public void AnyCharacter_Excludes_Only_Newline()
+    public void AnyCharacter_Includes_Line_Breaks()
     {
-        Assert.IsFalse(Whole(p => p.AnyCharacter()).IsMatch("\n"));
-        Assert.IsTrue(Whole(p => p.AnyCharacter()).IsMatch("\r"));
-        Assert.IsTrue(Whole(p => p.AnyCharacterIncludingNewline()).IsMatch("\n"));
+        Assert.IsTrue(Start.AnyCharacter().MatchesWholeText("\n"));
+        Assert.IsTrue(Start.AnyCharacter().MatchesWholeText("\r"));
+        Assert.IsFalse(Start.AnyCharacterExceptLineBreak().MatchesWholeText("\n"));
+        Assert.IsFalse(Start.AnyCharacterExceptLineBreak().MatchesWholeText("\r"));
+        Assert.IsTrue(Start.AnyCharacterExceptLineBreak().MatchesWholeText("a"));
     }
 
     [TestMethod]
-    public void AnyLineBreak_Treats_Crlf_As_One_Break()
+    public void LineBreak_Treats_Crlf_As_One_Break()
     {
-        var oneBreak = Whole(p => p.AnyLineBreak());
-        Assert.IsTrue(oneBreak.IsMatch("\r\n"));
-        Assert.IsTrue(oneBreak.IsMatch("\r"));
-        Assert.IsTrue(oneBreak.IsMatch("\n"));
-        Assert.IsFalse(oneBreak.IsMatch("\n\r"));
+        var oneBreak = Start.LineBreak();
+        Assert.IsTrue(oneBreak.MatchesWholeText("\r\n"));
+        Assert.IsTrue(oneBreak.MatchesWholeText("\r"));
+        Assert.IsTrue(oneBreak.MatchesWholeText("\n"));
+        Assert.IsFalse(oneBreak.MatchesWholeText("\n\r"));
     }
 
     [TestMethod]
-    public void Whitespace_Classes()
+    public void Whitespace_Kinds()
     {
-        Assert.IsTrue(Whole(p => p.AnyWhitespace(OneOrMore)).IsMatch(" \t\r\n"));
-        Assert.IsFalse(Whole(p => p.AnyNonWhitespace()).IsMatch(" "));
-        Assert.IsTrue(Whole(p => p.AnyNonWordCharacter()).IsMatch("@"));
-        Assert.IsTrue(Whole(p => p.AnyNonDigit()).IsMatch("a"));
+        Assert.IsTrue(Start.OneOrMore().Whitespace().MatchesWholeText(" \t\r\n"));
+        Assert.IsFalse(Start.AnyCharacterExceptWhitespace().MatchesWholeText(" "));
+        Assert.IsTrue(Start.AnyCharacterExceptWhitespace().MatchesWholeText("@"));
     }
 }

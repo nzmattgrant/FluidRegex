@@ -12,8 +12,8 @@ namespace FluidRegex;
 /// <example>
 /// <code>
 /// var hostCharacters = new CharacterSet()
-///     .CharactersInRange('a', 'z').CharactersInRange('0', '9')
-///     .TheCharacters("-._");
+///     .CharactersInRange('a', 'z').Digits()
+///     .Characters("-._");
 /// // [-a-z0-9._]
 /// </code>
 /// </example>
@@ -36,20 +36,15 @@ public sealed class CharacterSet
 
     internal bool IsEmpty => _items.Length == 0;
 
-    /// <summary>Adds one literal character.</summary>
-    /// <param name="character">The character; it is escaped as needed.</param>
-    [Pure]
-    public CharacterSet TheCharacter(char character) => Add(SetItem.Single(character));
-
-    /// <summary>Adds each character of <paramref name="characters"/>, taken literally.</summary>
+    /// <summary>Adds each character of <paramref name="characters"/>, matched as written.</summary>
     /// <param name="characters">The characters, for example <c>"@:%._+~#="</c>.</param>
     /// <exception cref="ArgumentNullException"><paramref name="characters"/> is null.</exception>
     /// <exception cref="ArgumentException">
     /// <paramref name="characters"/> is empty, or contains something that looks like a range such as <c>"a-z"</c>.
-    /// Use <see cref="CharactersInRange"/> for a range, or put <c>'-'</c> first for a literal hyphen.
+    /// Use <see cref="CharactersInRange"/> for a range, or put <c>'-'</c> first for a hyphen.
     /// </exception>
     [Pure]
-    public CharacterSet TheCharacters(string characters) =>
+    public CharacterSet Characters(string characters) =>
         AddRange(LiteralItems(characters, nameof(characters)));
 
     /// <summary>Adds every character from <paramref name="from"/> to <paramref name="to"/>, for example <c>'a'</c> to <c>'z'</c>.</summary>
@@ -59,7 +54,7 @@ public sealed class CharacterSet
     [Pure]
     public CharacterSet CharactersInRange(char from, char to) => Add(SetItem.Range(from, to, nameof(to)));
 
-    /// <summary>Adds every letter, including accented and non-Latin letters (<c>\p{L}</c>).</summary>
+    /// <summary>Adds every letter from any language, such as <c>a</c>, <c>É</c> or <c>ж</c> (<c>\p{L}</c>).</summary>
     [Pure]
     public CharacterSet Letters() => Add(SetItem.Token(@"\p{L}"));
 
@@ -71,13 +66,9 @@ public sealed class CharacterSet
     [Pure]
     public CharacterSet LowercaseLetters() => Add(SetItem.Token(@"\p{Ll}"));
 
-    /// <summary>Adds every digit (<c>\d</c>). In .NET this includes digits from every script.</summary>
+    /// <summary>Adds the digits 0 to 9 (<c>0-9</c>).</summary>
     [Pure]
-    public CharacterSet Digits() => Add(SetItem.Token(@"\d"));
-
-    /// <summary>Adds every letter, digit and underscore (<c>\w</c>).</summary>
-    [Pure]
-    public CharacterSet WordCharacters() => Add(SetItem.Token(@"\w"));
+    public CharacterSet Digits() => CharactersInRange('0', '9');
 
     /// <summary>Adds every whitespace character: space, tab, line breaks and so on (<c>\s</c>).</summary>
     [Pure]
@@ -98,9 +89,9 @@ public sealed class CharacterSet
             var from = lookAlike[0];
             var to = lookAlike[2];
             throw new ArgumentException(
-                $"\"{characters}\" contains \"{lookAlike}\", which looks like a range. Characters in a string are always taken literally. " +
+                $"\"{characters}\" contains \"{lookAlike}\", which looks like a range. Characters in a string are always matched as written. " +
                 $"For a range use AnyCharacterInRange('{from}', '{to}') or new CharacterSet().CharactersInRange('{from}', '{to}'); " +
-                "for a literal hyphen put '-' first, for example \"-" + from + to + "\".",
+                "for a hyphen put '-' first, for example \"-" + from + to + "\".",
                 paramName);
         }
 

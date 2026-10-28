@@ -1,5 +1,3 @@
-using static FluidRegex.NumberOfTimes;
-
 namespace FluidRegex.Test;
 
 [TestClass]
@@ -8,62 +6,63 @@ public class EitherOfTests
     [TestMethod]
     public void Either_Or_Is_Always_Grouped()
     {
-        var builder = new MatchThesePatterns().StartOfText().EitherOf("cat", "dog").EndOfText();
+        var builder = new TextPattern().StartOfText().EitherOf("cat", "dog").EndOfText();
         Assert.AreEqual(@"\A(?:cat|dog)\z", builder.ToString());
-        Assert.IsTrue(builder.IsMatch("cat"));
-        Assert.IsTrue(builder.IsMatch("dog"));
-        Assert.IsFalse(builder.IsMatch("catx"));
-        Assert.IsFalse(builder.IsMatch("xdog"));
+        Assert.IsTrue(builder.IsFoundIn("cat"));
+        Assert.IsTrue(builder.IsFoundIn("dog"));
+        Assert.IsFalse(builder.IsFoundIn("catx"));
+        Assert.IsFalse(builder.IsFoundIn("xdog"));
     }
 
     [TestMethod]
-    public void Text_Alternatives_Are_Escaped()
+    public void Text_Choices_Are_Escaped()
     {
-        Assert.AreEqual(@"(?:a\.b|c)", new MatchThesePatterns().EitherOf("a.b", "c").ToString());
+        Assert.AreEqual(@"(?:a\.b|c)", new TextPattern().EitherOf("a.b", "c").ToString());
     }
 
     [TestMethod]
-    public void A_Single_Alternative_Is_Just_That_Text()
+    public void A_Single_Choice_Is_Just_That_Text()
     {
-        Assert.AreEqual("cat", new MatchThesePatterns().EitherOf("cat").ToString());
+        Assert.AreEqual("cat", new TextPattern().EitherOf("cat").ToString());
     }
 
     [TestMethod]
-    public void Sub_Pattern_Alternatives()
+    public void Pattern_Choices()
     {
-        var digits = new SubPattern().AnyDigit(OneOrMore);
-        var letters = new SubPattern().AnyCharacterInRange('a', 'z', OneOrMore);
-        var builder = new MatchThesePatterns().StartOfText().EitherOf(digits, letters).EndOfText();
+        var digits = new TextPattern().OneOrMore().Digit();
+        var letters = new TextPattern().OneOrMore().AnyCharacterInRange('a', 'z');
+        var builder = new TextPattern().EitherOf(digits, letters);
 
-        Assert.AreEqual(@"\A(?:\d+|[a-z]+)\z", builder.ToString());
-        Assert.IsTrue(builder.IsMatch("123"));
-        Assert.IsTrue(builder.IsMatch("abc"));
-        Assert.IsFalse(builder.IsMatch("1a"));
+        Assert.AreEqual("(?:[0-9]+|[a-z]+)", builder.ToString());
+        Assert.IsTrue(builder.MatchesWholeText("123"));
+        Assert.IsTrue(builder.MatchesWholeText("abc"));
+        Assert.IsFalse(builder.MatchesWholeText("1a"));
     }
 
     [TestMethod]
-    public void Repeat_An_Either_Or_By_Grouping_It()
+    public void A_Count_Repeats_The_Whole_Either_Or()
     {
-        var builder = new MatchThesePatterns().Group(new SubPattern().EitherOf("ab", "cd"), OneOrMore);
+        var builder = new TextPattern().OneOrMore().EitherOf("ab", "cd");
         Assert.AreEqual("(?:ab|cd)+", builder.ToString());
+        Assert.IsTrue(builder.MatchesWholeText("abcdab"));
     }
 
     [TestMethod]
-    public void Inside_A_Lookaround_Or_Capture_The_Inner_Group_Is_Dropped()
+    public void Inside_A_Condition_Or_A_Save_The_Inner_Group_Is_Dropped()
     {
-        var catOrDog = new SubPattern().EitherOf("cat", "dog");
-        Assert.AreEqual("(?=cat|dog)", new MatchThesePatterns().IfFollowedBy(catOrDog).ToString());
-        Assert.AreEqual("(cat|dog)", new MatchThesePatterns().Capture(catOrDog).ToString());
-        Assert.AreEqual("(?=(?:cat|dog)s)", new MatchThesePatterns().IfFollowedBy(catOrDog.TheCharacter('s')).ToString());
+        var catOrDog = new TextPattern().EitherOf("cat", "dog");
+        Assert.AreEqual("(?=cat|dog)", new TextPattern().IfFollowedBy(catOrDog).ToString());
+        Assert.AreEqual("(?<pet>cat|dog)", new TextPattern().SaveAs("pet", catOrDog).ToString());
+        Assert.AreEqual("(?=(?:cat|dog)s)", new TextPattern().IfFollowedBy(catOrDog.Text("s")).ToString());
     }
 
     [TestMethod]
-    public void Missing_Or_Empty_Alternatives_Throw()
+    public void Missing_Or_Empty_Choices_Throw()
     {
-        Assert.ThrowsExactly<ArgumentException>(() => new MatchThesePatterns().EitherOf(new string[0]));
-        Assert.ThrowsExactly<ArgumentException>(() => new MatchThesePatterns().EitherOf("a", null!));
-        Assert.ThrowsExactly<ArgumentException>(() => new MatchThesePatterns().EitherOf("a", ""));
-        Assert.ThrowsExactly<ArgumentException>(() => new MatchThesePatterns().EitherOf(new SubPattern().TheText("a"), new SubPattern()));
-        Assert.ThrowsExactly<ArgumentNullException>(() => new MatchThesePatterns().EitherOf((string[])null!));
+        Assert.ThrowsExactly<ArgumentException>(() => new TextPattern().EitherOf(new string[0]));
+        Assert.ThrowsExactly<ArgumentException>(() => new TextPattern().EitherOf("a", null!));
+        Assert.ThrowsExactly<ArgumentException>(() => new TextPattern().EitherOf("a", ""));
+        Assert.ThrowsExactly<ArgumentException>(() => new TextPattern().EitherOf(new TextPattern().Text("a"), new TextPattern()));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new TextPattern().EitherOf((string[])null!));
     }
 }
