@@ -44,24 +44,4 @@ internal static class Guard
 
         return name!;
     }
-
-    public static T[] NotNullOrEmptyItems<T>(T[]? items, string paramName)
-        where T : class
-    {
-        NotNull(items, paramName);
-        if (items!.Length == 0)
-        {
-            throw new ArgumentException("At least one item is required.", paramName);
-        }
-
-        for (var i = 0; i < items.Length; i++)
-        {
-            if (items[i] is null)
-            {
-                throw new ArgumentException($"Item {i} is null.", paramName);
-            }
-        }
-
-        return items;
-    }
 }

@@ -30,7 +30,7 @@ public class AnchorTests
     [TestMethod]
     public void A_Whole_Line_Does_Not_Keep_The_Carriage_Return()
     {
-        var line = new TextPattern().StartOfLine().ZeroOrMore().AnyCharacterExceptLineBreak().EndOfLine();
+        var line = new TextPattern().StartOfLine().AnyCharacterExceptLineBreak(Times.ZeroOrMore).EndOfLine();
         var lines = line.FindAll("abc\r\nx").Select(found => found.Text).Where(text => text.Length > 0).ToArray();
         CollectionAssert.AreEqual(new[] { "abc", "x" }, lines);
     }
@@ -38,7 +38,7 @@ public class AnchorTests
     [TestMethod]
     public void Line_Anchors_Find_Lines_In_Mixed_Text()
     {
-        var todo = new TextPattern().StartOfLine().Text("TODO").ZeroOrMore().AnyCharacterExceptLineBreak().EndOfLine();
+        var todo = new TextPattern().StartOfLine().Text("TODO").AnyCharacterExceptLineBreak(Times.ZeroOrMore).EndOfLine();
         var found = todo.FindAll("a\r\nTODO one\nb\rTODO two").Select(f => f.Text).ToArray();
         CollectionAssert.AreEqual(new[] { "TODO one", "TODO two" }, found);
     }

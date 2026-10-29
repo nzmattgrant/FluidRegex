@@ -106,9 +106,9 @@ public class CharacterSetTests
     [TestMethod]
     public void AnyCharacterExcept_Emits_A_Negated_Set()
     {
-        Assert.AreEqual("[^<>]+", new TextPattern().OneOrMore().AnyCharacterExcept("<>").ToString());
+        Assert.AreEqual("[^<>]+", new TextPattern().AnyCharacterExcept("<>", Times.OneOrMore).ToString());
         Assert.AreEqual(@"[^-\^]", new TextPattern().AnyCharacterExcept("^-").ToString());
-        Assert.AreEqual("[^\"]*", new TextPattern().ZeroOrMore().AnyCharacterExcept("\"").ToString());
+        Assert.AreEqual("[^\"]*", new TextPattern().AnyCharacterExcept("\"", Times.ZeroOrMore).ToString());
 
         var notHyphenOrCaret = new TextPattern().AnyCharacterExcept("^-");
         Assert.IsTrue(notHyphenOrCaret.MatchesWholeText("a"));
@@ -121,7 +121,7 @@ public class CharacterSetTests
     {
         var whitespaceOrAt = new CharacterSet().Whitespace().Characters("@");
         Assert.AreEqual(@"[\s@]", OneOf(whitespaceOrAt).ToString());
-        Assert.AreEqual(@"[^\s@]+", new TextPattern().OneOrMore().AnyCharacterExcept(whitespaceOrAt).ToString());
+        Assert.AreEqual(@"[^\s@]+", new TextPattern().AnyCharacterExcept(whitespaceOrAt, Times.OneOrMore).ToString());
 
         var kinds = new CharacterSet().Letters().UppercaseLetters().LowercaseLetters().Digits().Whitespace();
         Assert.AreEqual(@"[\p{L}\p{Lu}\p{Ll}0-9\s]", kinds.ToString());
@@ -132,8 +132,8 @@ public class CharacterSetTests
     [TestMethod]
     public void AnyCharacterInRange_Emits_A_Range()
     {
-        Assert.AreEqual("[a-z]{2,6}", new TextPattern().Between(2, 6).AnyCharacterInRange('a', 'z').ToString());
-        var digits = new TextPattern().OneOrMore().AnyCharacterInRange('0', '9');
+        Assert.AreEqual("[a-z]{2,6}", new TextPattern().AnyCharacterInRange('a', 'z', Times.Between(2, 6)).ToString());
+        var digits = new TextPattern().AnyCharacterInRange('0', '9', Times.OneOrMore);
         Assert.IsTrue(digits.MatchesWholeText("0123456789"));
         Assert.IsFalse(digits.MatchesWholeText("٣"));
     }

@@ -106,7 +106,7 @@ internal sealed class SequenceNode(NodeList nodes) : RegexNode
 }
 
 /// <summary>A node followed by a count. Anything that isn't an atom is wrapped in (?:...) first.</summary>
-internal sealed class QuantifiedNode(RegexNode inner, NumberOfTimes times) : RegexNode
+internal sealed class QuantifiedNode(RegexNode inner, Times times) : RegexNode
 {
     // Never an atom, so a second count always wraps: (?:\d+)* and never \d+*.
     public override bool IsAtom => false;
@@ -119,10 +119,10 @@ internal sealed class QuantifiedNode(RegexNode inner, NumberOfTimes times) : Reg
 }
 
 /// <summary>
-/// A named capture (?&lt;name&gt;...), written by SaveAs. The count goes inside so the capture holds the whole run;
+/// A named capture (?&lt;name&gt;...), written by SaveTextAs. The count goes inside so the capture holds the whole run;
 /// when the count allows zero, the optional part moves outside so a missing capture reports Success == false.
 /// </summary>
-internal sealed class CaptureNode(string name, RegexNode content, NumberOfTimes times) : RegexNode
+internal sealed class CaptureNode(string name, RegexNode content, Times times) : RegexNode
 {
     public string Name => name;
 
@@ -143,7 +143,7 @@ internal sealed class CaptureNode(string name, RegexNode content, NumberOfTimes 
         }
     }
 
-    private void WriteCapture(StringBuilder builder, NumberOfTimes inner)
+    private void WriteCapture(StringBuilder builder, Times inner)
     {
         builder.Append("(?<").Append(name).Append('>');
         if (inner.IsOnce)

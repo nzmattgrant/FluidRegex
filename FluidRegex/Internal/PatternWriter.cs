@@ -17,7 +17,7 @@ internal static class PatternWriter
     }
 
     /// <summary>Writes a node with a count, wrapping it in (?:...) unless it is a single atom.</summary>
-    public static void WriteQuantified(StringBuilder builder, RegexNode node, NumberOfTimes times)
+    public static void WriteQuantified(StringBuilder builder, RegexNode node, Times times)
     {
         if (times.IsOnce)
         {

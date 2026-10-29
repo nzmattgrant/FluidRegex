@@ -23,7 +23,7 @@ internal static class PatternChecks
                 {
                     throw new ArgumentException(
                         $"The pattern uses SameTextAsSaved(\"{name}\"), but nothing is saved as \"{name}\". " +
-                        $"Add SaveAs(\"{name}\", ...) before it.");
+                        $"Add SaveTextAs(\"{name}\", ...) before it.");
                 }
             }
         }
@@ -34,8 +34,8 @@ internal static class PatternChecks
             if (walk.SavedNames.Contains(name))
             {
                 throw new ArgumentException(
-                    $"The pattern uses SameTextAsSaved(\"{name}\") before SaveAs(\"{name}\", ...). " +
-                    "It can only repeat text that was already saved, so it must come after SaveAs.");
+                    $"The pattern uses SameTextAsSaved(\"{name}\") before SaveTextAs(\"{name}\", ...). " +
+                    "It can only repeat text that was already saved, so it must come after SaveTextAs.");
             }
         }
     }

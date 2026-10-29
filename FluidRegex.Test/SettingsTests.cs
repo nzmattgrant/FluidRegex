@@ -26,7 +26,7 @@ public class SettingsTests
     public void IgnoringCase_Carries_Through_Later_Calls()
     {
         Assert.AreEqual(RegexOptions.IgnoreCase, new TextPattern().IgnoringCase().Text("a").Text("b").ToRegex().Options);
-        Assert.IsTrue(new TextPattern().IgnoringCase().OneOrMore().Text("a").MatchesWholeText("aA"));
+        Assert.IsTrue(new TextPattern().IgnoringCase().Text("a", Times.OneOrMore).MatchesWholeText("aA"));
     }
 
     [TestMethod]

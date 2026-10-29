@@ -10,8 +10,8 @@ public class ReuseAndImmutabilityTests
     public void A_Shared_Start_Can_Branch()
     {
         var prefix = new TextPattern().StartOfText().Text("id-");
-        var digits = prefix.OneOrMore().Digit();
-        var letters = prefix.OneOrMore().Letter();
+        var digits = prefix.Digit(Times.OneOrMore);
+        var letters = prefix.Letter(Times.OneOrMore);
 
         Assert.AreEqual(@"\Aid-", prefix.ToString());
         Assert.AreEqual(@"\Aid-[0-9]+", digits.ToString());
@@ -22,9 +22,9 @@ public class ReuseAndImmutabilityTests
     public void A_Count_Can_Be_Used_For_Several_Pieces()
     {
         var start = new TextPattern().Text("a");
-        var oneOrMore = start.OneOrMore();
-        var digits = oneOrMore.Digit();
-        var letters = oneOrMore.Letter();
+        var oneOrMore = Times.OneOrMore;
+        var digits = start.Digit(oneOrMore);
+        var letters = start.Letter(oneOrMore);
 
         Assert.AreEqual("a", start.ToString());
         Assert.AreEqual("a[0-9]+", digits.ToString());
@@ -34,7 +34,7 @@ public class ReuseAndImmutabilityTests
     [TestMethod]
     public void One_Pattern_Can_Be_Used_Many_Times()
     {
-        var word = new TextPattern().OneOrMore().Letter();
+        var word = new TextPattern().Letter(Times.OneOrMore);
         var builder = new TextPattern().Pattern(word).Text(".").Pattern(word).Text(".").Pattern(word);
         Assert.AreEqual(@"\p{L}+\.\p{L}+\.\p{L}+", builder.ToString());
     }
@@ -42,8 +42,8 @@ public class ReuseAndImmutabilityTests
     [TestMethod]
     public void Extending_A_Pattern_After_Use_Does_Not_Change_Earlier_Uses()
     {
-        var word = new TextPattern().OneOrMore().Letter();
-        var builder = new TextPattern().Optional().Pattern(word);
+        var word = new TextPattern().Letter(Times.OneOrMore);
+        var builder = new TextPattern().Pattern(word, Times.Optional);
         var longer = word.Text("!");
 
         Assert.AreEqual(@"(?:\p{L}+)?", builder.ToString());
@@ -63,7 +63,7 @@ public class ReuseAndImmutabilityTests
     [TestMethod]
     public void A_Shared_Pattern_Is_Safe_Across_Threads()
     {
-        var shared = new TextPattern().OneOrMore().Digit();
+        var shared = new TextPattern().Digit(Times.OneOrMore);
         Parallel.For(0, 1000, i =>
         {
             Assert.AreEqual("[0-9]+", shared.ToString());

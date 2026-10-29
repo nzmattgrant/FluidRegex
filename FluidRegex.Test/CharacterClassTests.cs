@@ -25,16 +25,16 @@ public class CharacterClassTests
     [TestMethod]
     public void Each_Kind_Takes_A_Count()
     {
-        Assert.AreEqual("[0-9]{4}", Start.Exactly(4).Digit().ToString());
-        Assert.AreEqual(@"[\p{L}0-9]+", Start.OneOrMore().LetterOrDigit().ToString());
-        Assert.AreEqual(@"[\s\S]{8,}", Start.AtLeast(8).AnyCharacter().ToString());
-        Assert.AreEqual(@"(?:\r\n|\r|\n)+", Start.OneOrMore().LineBreak().ToString());
+        Assert.AreEqual("[0-9]{4}", Start.Digit(Times.Exactly(4)).ToString());
+        Assert.AreEqual(@"[\p{L}0-9]+", Start.LetterOrDigit(Times.OneOrMore).ToString());
+        Assert.AreEqual(@"[\s\S]{8,}", Start.AnyCharacter(Times.AtLeast(8)).ToString());
+        Assert.AreEqual(@"(?:\r\n|\r|\n)+", Start.LineBreak(Times.OneOrMore).ToString());
     }
 
     [TestMethod]
     public void Letters_Follow_Unicode_But_Digits_Are_Only_0_To_9()
     {
-        Assert.IsTrue(Start.OneOrMore().Digit().MatchesWholeText("0123456789"));
+        Assert.IsTrue(Start.Digit(Times.OneOrMore).MatchesWholeText("0123456789"));
         Assert.IsFalse(Start.Digit().MatchesWholeText("٣"), "Arabic-Indic digit three");
         Assert.IsTrue(Start.AnyCharacterExceptDigit().MatchesWholeText("٣"));
         Assert.IsTrue(Start.Letter().MatchesWholeText("é"));
@@ -77,7 +77,7 @@ public class CharacterClassTests
     [TestMethod]
     public void Whitespace_Kinds()
     {
-        Assert.IsTrue(Start.OneOrMore().Whitespace().MatchesWholeText(" \t\r\n"));
+        Assert.IsTrue(Start.Whitespace(Times.OneOrMore).MatchesWholeText(" \t\r\n"));
         Assert.IsFalse(Start.AnyCharacterExceptWhitespace().MatchesWholeText(" "));
         Assert.IsTrue(Start.AnyCharacterExceptWhitespace().MatchesWholeText("@"));
     }

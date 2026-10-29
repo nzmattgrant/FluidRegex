@@ -49,17 +49,17 @@ public class LiteralTextTests
     public void Counted_Text_Is_Wrapped_Only_When_Longer_Than_One_Character()
     {
         Assert.AreEqual(@"www\.", new TextPattern().Text("www.").ToString());
-        Assert.AreEqual(@"(?:www\.)?", new TextPattern().Optional().Text("www.").ToString());
-        Assert.AreEqual("s?", new TextPattern().Optional().Text("s").ToString());
-        Assert.AreEqual(@"\.+", new TextPattern().OneOrMore().Text(".").ToString());
-        Assert.AreEqual(@"\(?", new TextPattern().Optional().Text("(").ToString());
+        Assert.AreEqual(@"(?:www\.)?", new TextPattern().Text("www.", Times.Optional).ToString());
+        Assert.AreEqual("s?", new TextPattern().Text("s", Times.Optional).ToString());
+        Assert.AreEqual(@"\.+", new TextPattern().Text(".", Times.OneOrMore).ToString());
+        Assert.AreEqual(@"\(?", new TextPattern().Text("(", Times.Optional).ToString());
     }
 
     [TestMethod]
     public void A_Surrogate_Pair_Repeats_As_One_Unit()
     {
         const string emoji = "\U0001F600";
-        Assert.IsTrue(new TextPattern().OneOrMore().Text(emoji).MatchesWholeText(emoji + emoji));
+        Assert.IsTrue(new TextPattern().Text(emoji, Times.OneOrMore).MatchesWholeText(emoji + emoji));
     }
 
     [TestMethod]

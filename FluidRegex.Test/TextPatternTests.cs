@@ -110,11 +110,11 @@ public class TextPatternTests
     }
 
     [TestMethod]
-    public void IfFollowedBy()
+    public void TextAfterHereStartsWith()
     {
         var builder = new TextPattern()
             .Text("X")
-            .IfFollowedBy("Y");
+            .TextAfterHereStartsWith("Y");
         Assert.AreEqual("X(?=Y)", builder.ToString());
         Assert.IsTrue(builder.IsFoundIn("XYZ"));
         Assert.IsTrue(builder.IsFoundIn("XY"));
@@ -126,7 +126,7 @@ public class TextPatternTests
     public void Test_Design_Example()
     {
         // was ^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$
-        var word = new TextPattern().OneOrMore().OneOfTheseCharacters(new CharacterSet().Letters().Digits().Characters("_"));
+        var word = new TextPattern().OneOfTheseCharacters(new CharacterSet().Letters().Digits().Characters("_"), Times.OneOrMore);
         var symbolThenWord = new TextPattern()
             .OneOfTheseCharacters("-+.'")
             .Pattern(word);
@@ -137,13 +137,13 @@ public class TextPatternTests
         var email = new TextPattern()
             .StartOfText()
             .Pattern(word)
-            .ZeroOrMore().Pattern(symbolThenWord)
+            .Pattern(symbolThenWord, Times.ZeroOrMore)
             .Text("@")
             .Pattern(word)
-            .ZeroOrMore().Pattern(dotOrHyphenThenWord)
+            .Pattern(dotOrHyphenThenWord, Times.ZeroOrMore)
             .Text(".")
             .Pattern(word)
-            .ZeroOrMore().Pattern(dotOrHyphenThenWord)
+            .Pattern(dotOrHyphenThenWord, Times.ZeroOrMore)
             .EndOfText();
 
         Assert.AreEqual(
@@ -160,17 +160,17 @@ public class TextPatternTests
     [TestMethod]
     public void Test_Design_Example_With_Saved_Parts()
     {
-        var word = new TextPattern().OneOrMore().LetterOrDigit();
+        var word = new TextPattern().LetterOrDigit(Times.OneOrMore);
         var dotOrHyphenThenWord = new TextPattern()
             .OneOfTheseCharacters("-.")
             .Pattern(word);
 
         var email = new TextPattern()
-            .SaveAs("user", word)
+            .SaveTextAs("user", word)
             .Text("@")
-            .SaveAs("domain", new TextPattern().Pattern(word).ZeroOrMore().Pattern(dotOrHyphenThenWord))
+            .SaveTextAs("domain", new TextPattern().Pattern(word).Pattern(dotOrHyphenThenWord, Times.ZeroOrMore))
             .Text(".")
-            .SaveAs("ending", word);
+            .SaveTextAs("ending", word);
 
         Assert.AreEqual(@"(?<user>[\p{L}0-9]+)@(?<domain>[\p{L}0-9]+(?:[-.][\p{L}0-9]+)*)\.(?<ending>[\p{L}0-9]+)", email.ToString());
         var found = email.FindFirst("john@mail.example.uk")!;
@@ -188,18 +188,18 @@ public class TextPatternTests
         var pathCharacters = new CharacterSet()
             .CharactersInRange('a', 'z').CharactersInRange('A', 'Z').Digits()
             .Characters("-@:%_+.~#()?&//=");
-        var path = new TextPattern().ZeroOrMore().OneOfTheseCharacters(pathCharacters);
+        var path = new TextPattern().OneOfTheseCharacters(pathCharacters, Times.ZeroOrMore);
 
         var url = new TextPattern()
             .Text("http")
-            .Optional().Text("s")
+            .Text("s", Times.Optional)
             .Text("://")
-            .Optional().SaveAs("www", new TextPattern().Text("www."))
-            .Between(2, 256).OneOfTheseCharacters(hostCharacters)
+            .SaveTextAs("www", new TextPattern().Text("www."), Times.Optional)
+            .OneOfTheseCharacters(hostCharacters, Times.Between(2, 256))
             .Text(".")
-            .Between(2, 6).AnyCharacterInRange('a', 'z')
+            .AnyCharacterInRange('a', 'z', Times.Between(2, 6))
             .EndOfWord()
-            .SaveAs("path", path);
+            .SaveTextAs("path", path);
 
         Assert.AreEqual(
             @"https?://(?<www>www\.)?[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b(?<=\w)(?<path>[-a-zA-Z0-9@:%_+.~#()?&/=]*)",
@@ -215,10 +215,10 @@ public class TextPatternTests
     }
 
     [TestMethod]
-    public void IfPrecededBy_Matches_Only_After_The_Text()
+    public void TextBeforeHereEndsWith_Matches_Only_After_The_Text()
     {
         var builder = new TextPattern()
-            .IfPrecededBy("X")
+            .TextBeforeHereEndsWith("X")
             .Text("Y");
         Assert.AreEqual("(?<=X)Y", builder.ToString());
         Assert.IsTrue(builder.IsFoundIn("XY"));
@@ -227,11 +227,11 @@ public class TextPatternTests
     }
 
     [TestMethod]
-    public void IfNotFollowedBy_Matches_Only_When_The_Text_Is_Not_Next()
+    public void TextAfterHereDoesNotStartWith_Matches_Only_When_The_Text_Is_Not_Next()
     {
         var builder = new TextPattern()
             .Text("X")
-            .IfNotFollowedBy("Y");
+            .TextAfterHereDoesNotStartWith("Y");
         Assert.AreEqual("X(?!Y)", builder.ToString());
         Assert.IsTrue(builder.IsFoundIn("X"));
         Assert.IsTrue(builder.IsFoundIn("XZ"));
@@ -239,10 +239,10 @@ public class TextPatternTests
     }
 
     [TestMethod]
-    public void IfNotPrecededBy_Matches_Only_When_The_Text_Is_Not_Before()
+    public void TextBeforeHereDoesNotEndWith_Matches_Only_When_The_Text_Is_Not_Before()
     {
         var builder = new TextPattern()
-            .IfNotPrecededBy("X")
+            .TextBeforeHereDoesNotEndWith("X")
             .Text("Y");
         Assert.AreEqual("(?<!X)Y", builder.ToString());
         Assert.IsTrue(builder.IsFoundIn("Y"));
@@ -263,10 +263,10 @@ public class TextPatternTests
     }
 
     [TestMethod]
-    public void SaveAs_Wraps_The_Pattern_In_A_Named_Group()
+    public void SaveTextAs_Wraps_The_Pattern_In_A_Named_Group()
     {
         var builder = new TextPattern()
-            .SaveAs("word", new TextPattern().Text("test"));
+            .SaveTextAs("word", new TextPattern().Text("test"));
         Assert.AreEqual("(?<word>test)", builder.ToString());
         Assert.AreEqual("test", builder.FindFirst("a test")!.Saved("word"));
     }
@@ -298,7 +298,7 @@ public class TextPatternTests
     {
         var builder = new TextPattern()
             .StartOfText()
-            .Between(2, 3).OneOfTheseCharacters("abc")
+            .OneOfTheseCharacters("abc", Times.Between(2, 3))
             .EndOfText();
         Assert.AreEqual(@"\A[abc]{2,3}\z", builder.ToString());
         Assert.IsTrue(builder.IsFoundIn("ab"));
@@ -313,7 +313,7 @@ public class TextPatternTests
     {
         var builder = new TextPattern()
             .StartOfText()
-            .OneOrMore().Text("abc")
+            .Text("abc", Times.OneOrMore)
             .EndOfText();
         Assert.AreEqual(@"\A(?:abc)+\z", builder.ToString());
         Assert.IsTrue(builder.IsFoundIn("abc"));

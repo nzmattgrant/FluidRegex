@@ -5,14 +5,14 @@ namespace FluidRegex.Test;
 [TestClass]
 public class ResultTests
 {
-    private static readonly TextPattern Number = new TextPattern().OneOrMore().Digit();
+    private static readonly TextPattern Number = new TextPattern().Digit(Times.OneOrMore);
 
     private static readonly TextPattern Email = new TextPattern()
-        .OneOrMore().LetterOrDigit()
+        .LetterOrDigit(Times.OneOrMore)
         .Text("@")
-        .OneOrMore().LetterOrDigit()
+        .LetterOrDigit(Times.OneOrMore)
         .Text(".")
-        .OneOrMore().Letter();
+        .Letter(Times.OneOrMore);
 
     [TestMethod]
     public void IsFoundIn_Searches_Anywhere_But_MatchesWholeText_Checks_All_Of_It()
@@ -31,7 +31,7 @@ public class ResultTests
         Assert.IsFalse(catOrDog.MatchesWholeText("cats"));
         Assert.IsFalse(catOrDog.MatchesWholeText("xcat"));
 
-        Assert.IsTrue(new TextPattern().IfNotPrecededBy("x").Text("a").MatchesWholeText("a"));
+        Assert.IsTrue(new TextPattern().TextBeforeHereDoesNotEndWith("x").Text("a").MatchesWholeText("a"));
         Assert.IsTrue(new TextPattern().MatchesWholeText(""));
     }
 
@@ -69,9 +69,9 @@ public class ResultTests
     public void Saved_Returns_The_Saved_Text()
     {
         var date = new TextPattern()
-            .SaveAs("year", new TextPattern().Exactly(4).Digit())
+            .SaveTextAs("year", new TextPattern().Digit(Times.Exactly(4)))
             .Text("-")
-            .SaveAs("month", new TextPattern().Exactly(2).Digit());
+            .SaveTextAs("month", new TextPattern().Digit(Times.Exactly(2)));
 
         var found = date.FindFirst("Due 2026-10")!;
         Assert.AreEqual("2026", found.Saved("year"));
@@ -83,8 +83,8 @@ public class ResultTests
     public void Saved_Returns_An_Empty_String_For_A_Missing_Optional_Part()
     {
         var price = new TextPattern()
-            .SaveAs("dollars", Number)
-            .Optional().Pattern(new TextPattern().Text(".").SaveAs("cents", new TextPattern().Exactly(2).Digit()));
+            .SaveTextAs("dollars", Number)
+            .Pattern(new TextPattern().Text(".").SaveTextAs("cents", new TextPattern().Digit(Times.Exactly(2))), Times.Optional);
 
         Assert.AreEqual("50", price.FindFirst("42.50")!.Saved("cents"));
         Assert.AreEqual("", price.FindFirst("42")!.Saved("cents"));
@@ -93,7 +93,7 @@ public class ResultTests
     [TestMethod]
     public void Saved_Rejects_A_Name_That_Was_Never_Saved()
     {
-        var found = new TextPattern().SaveAs("year", Number).FindFirst("2026")!;
+        var found = new TextPattern().SaveTextAs("year", Number).FindFirst("2026")!;
 
         var exception = Assert.ThrowsExactly<ArgumentException>(() => found.Saved("yaer"));
         Assert.AreEqual("name", exception.ParamName);

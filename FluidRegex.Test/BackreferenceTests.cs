@@ -3,7 +3,7 @@ namespace FluidRegex.Test;
 [TestClass]
 public class BackreferenceTests
 {
-    private static readonly TextPattern AWord = new TextPattern().OneOrMore().Letter();
+    private static readonly TextPattern AWord = new TextPattern().Letter(Times.OneOrMore);
     private static readonly TextPattern A = new TextPattern().Text("a");
 
     [TestMethod]
@@ -11,8 +11,8 @@ public class BackreferenceTests
     {
         var repeatedWord = new TextPattern()
             .StartOfWord()
-            .SaveAs("word", AWord)
-            .OneOrMore().Whitespace()
+            .SaveTextAs("word", AWord)
+            .Whitespace(Times.OneOrMore)
             .SameTextAsSaved("word")
             .EndOfWord();
 
@@ -24,8 +24,8 @@ public class BackreferenceTests
     [TestMethod]
     public void A_Reference_Can_Be_Counted()
     {
-        Assert.AreEqual(@"\k<w>{2}", new TextPattern().Exactly(2).SameTextAsSaved("w").ToString());
-        Assert.IsTrue(new TextPattern().SaveAs("w", A).Exactly(2).SameTextAsSaved("w").MatchesWholeText("aaa"));
+        Assert.AreEqual(@"\k<w>{2}", new TextPattern().SameTextAsSaved("w", Times.Exactly(2)).ToString());
+        Assert.IsTrue(new TextPattern().SaveTextAs("w", A).SameTextAsSaved("w", Times.Exactly(2)).MatchesWholeText("aaa"));
     }
 
     [TestMethod]
@@ -41,11 +41,11 @@ public class BackreferenceTests
     {
         var builder = new TextPattern()
             .SameTextAsSaved("w")
-            .SaveAs("w", A);
+            .SaveTextAs("w", A);
 
         Assert.AreEqual(@"\k<w>(?<w>a)", builder.ToString(), "ToString never throws");
         var exception = Assert.ThrowsExactly<ArgumentException>(() => builder.ToRegex());
-        StringAssert.Contains(exception.Message, "SameTextAsSaved(\"w\") before SaveAs(\"w\", ...)");
+        StringAssert.Contains(exception.Message, "SameTextAsSaved(\"w\") before SaveTextAs(\"w\", ...)");
         Assert.ThrowsExactly<ArgumentException>(() => builder.IsFoundIn("aa"));
     }
 
@@ -54,8 +54,8 @@ public class BackreferenceTests
     {
         // Lookbehinds run right to left, so reading order says nothing about them.
         var builder = new TextPattern()
-            .IfPrecededBy(new TextPattern().SameTextAsSaved("w"))
-            .SaveAs("w", A);
+            .TextBeforeHereEndsWith(new TextPattern().SameTextAsSaved("w"))
+            .SaveTextAs("w", A);
         _ = builder.ToRegex();
     }
 

@@ -21,16 +21,16 @@ public class EitherOfTests
     }
 
     [TestMethod]
-    public void A_Single_Choice_Is_Just_That_Text()
+    public void More_Than_Two_Choices()
     {
-        Assert.AreEqual("cat", new TextPattern().EitherOf("cat").ToString());
+        Assert.AreEqual("(?:jan|feb|mar)", new TextPattern().EitherOf("jan", "feb", "mar").ToString());
     }
 
     [TestMethod]
     public void Pattern_Choices()
     {
-        var digits = new TextPattern().OneOrMore().Digit();
-        var letters = new TextPattern().OneOrMore().AnyCharacterInRange('a', 'z');
+        var digits = new TextPattern().Digit(Times.OneOrMore);
+        var letters = new TextPattern().AnyCharacterInRange('a', 'z', Times.OneOrMore);
         var builder = new TextPattern().EitherOf(digits, letters);
 
         Assert.AreEqual("(?:[0-9]+|[a-z]+)", builder.ToString());
@@ -42,7 +42,8 @@ public class EitherOfTests
     [TestMethod]
     public void A_Count_Repeats_The_Whole_Either_Or()
     {
-        var builder = new TextPattern().OneOrMore().EitherOf("ab", "cd");
+        var abOrCd = new TextPattern().EitherOf("ab", "cd");
+        var builder = new TextPattern().Pattern(abOrCd, Times.OneOrMore);
         Assert.AreEqual("(?:ab|cd)+", builder.ToString());
         Assert.IsTrue(builder.MatchesWholeText("abcdab"));
     }
@@ -51,18 +52,19 @@ public class EitherOfTests
     public void Inside_A_Condition_Or_A_Save_The_Inner_Group_Is_Dropped()
     {
         var catOrDog = new TextPattern().EitherOf("cat", "dog");
-        Assert.AreEqual("(?=cat|dog)", new TextPattern().IfFollowedBy(catOrDog).ToString());
-        Assert.AreEqual("(?<pet>cat|dog)", new TextPattern().SaveAs("pet", catOrDog).ToString());
-        Assert.AreEqual("(?=(?:cat|dog)s)", new TextPattern().IfFollowedBy(catOrDog.Text("s")).ToString());
+        Assert.AreEqual("(?=cat|dog)", new TextPattern().TextAfterHereStartsWith(catOrDog).ToString());
+        Assert.AreEqual("(?<pet>cat|dog)", new TextPattern().SaveTextAs("pet", catOrDog).ToString());
+        Assert.AreEqual("(?=(?:cat|dog)s)", new TextPattern().TextAfterHereStartsWith(catOrDog.Text("s")).ToString());
     }
 
     [TestMethod]
     public void Missing_Or_Empty_Choices_Throw()
     {
-        Assert.ThrowsExactly<ArgumentException>(() => new TextPattern().EitherOf(new string[0]));
-        Assert.ThrowsExactly<ArgumentException>(() => new TextPattern().EitherOf("a", null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new TextPattern().EitherOf("a", (string)null!));
         Assert.ThrowsExactly<ArgumentException>(() => new TextPattern().EitherOf("a", ""));
+        Assert.ThrowsExactly<ArgumentException>(() => new TextPattern().EitherOf("a", "b", ""));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new TextPattern().EitherOf("a", "b", (string)null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => new TextPattern().EitherOf("a", "b", (string[])null!));
         Assert.ThrowsExactly<ArgumentException>(() => new TextPattern().EitherOf(new TextPattern().Text("a"), new TextPattern()));
-        Assert.ThrowsExactly<ArgumentNullException>(() => new TextPattern().EitherOf((string[])null!));
     }
 }

@@ -25,9 +25,9 @@ public sealed class FoundText
     public int Position => _match.Index;
 
     /// <summary>
-    /// The text saved with <c>SaveAs(name, ...)</c>. Empty when that part of the pattern was optional and missing.
+    /// The text saved with <c>SaveTextAs(name, ...)</c>. Empty when that part of the pattern was optional and missing.
     /// </summary>
-    /// <param name="name">The name given to <see cref="PatternPieces.SaveAs"/>.</param>
+    /// <param name="name">The name given to <see cref="TextPattern.SaveTextAs"/>.</param>
     /// <exception cref="ArgumentNullException"><paramref name="name"/> is null.</exception>
     /// <exception cref="ArgumentException">The pattern saves nothing under <paramref name="name"/>.</exception>
     public string Saved(string name)
@@ -49,7 +49,7 @@ public sealed class FoundText
         // Unnamed groups, including group 0 (the whole match), have names that start with a digit.
         var savedNames = _regex.GetGroupNames().Where(groupName => !char.IsDigit(groupName[0])).ToArray();
         return savedNames.Length == 0
-            ? $"The pattern saves nothing. Add SaveAs(\"{name}\", ...) to the pattern to save part of the text."
+            ? $"The pattern saves nothing. Add SaveTextAs(\"{name}\", ...) to the pattern to save part of the text."
             : $"Nothing is saved as \"{name}\". The pattern saves: \"{string.Join("\", \"", savedNames)}\".";
     }
 }

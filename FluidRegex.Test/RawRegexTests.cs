@@ -7,7 +7,7 @@ public class RawRegexTests
     public void Raw_Regex_Is_Always_Wrapped()
     {
         Assert.AreEqual(@"(?:\d{3})", new TextPattern().RawRegex(@"\d{3}").ToString());
-        Assert.AreEqual(@"(?:\p{IsGreek})+", new TextPattern().OneOrMore().RawRegex(@"\p{IsGreek}").ToString());
+        Assert.AreEqual(@"(?:\p{IsGreek})+", new TextPattern().RawRegex(@"\p{IsGreek}", Times.OneOrMore).ToString());
     }
 
     [TestMethod]
@@ -38,7 +38,7 @@ public class RawRegexTests
     public void Raw_Regex_Can_Refer_To_Saved_Text()
     {
         var builder = new TextPattern()
-            .SaveAs("w", new TextPattern().Text("a"))
+            .SaveTextAs("w", new TextPattern().Text("a"))
             .RawRegex(@"\k<w>");
         Assert.IsTrue(builder.IsFoundIn("aa"));
     }

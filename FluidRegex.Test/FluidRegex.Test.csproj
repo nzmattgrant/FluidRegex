@@ -12,6 +12,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FluidRegex\FluidRegex.csproj" />
+    <!-- ApiReferenceTests compares this page with the public API. -->
+    <None Include="..\docs\api-reference.md" Link="api-reference.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

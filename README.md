@@ -11,9 +11,9 @@ You do not need to know regex syntax.
 using FluidRegex;
 
 var isoDate = new TextPattern()
-    .Exactly(4).Digit().Text("-")
-    .Exactly(2).Digit().Text("-")
-    .Exactly(2).Digit();
+    .Digit(Times.Exactly(4)).Text("-")
+    .Digit(Times.Exactly(2)).Text("-")
+    .Digit(Times.Exactly(2));
 
 isoDate.MatchesWholeText("2026-10-12");   // true
 isoDate.ToString();                       // [0-9]{4}-[0-9]{2}-[0-9]{2}
@@ -33,19 +33,19 @@ Here is a similar check in FluidRegex:
 
 ```csharp
 var word = new TextPattern()
-    .OneOrMore().OneOfTheseCharacters(new CharacterSet().Letters().Digits().Characters("_"));
+    .OneOfTheseCharacters(new CharacterSet().Letters().Digits().Characters("_"), Times.OneOrMore);
 var symbolThenWord = new TextPattern().OneOfTheseCharacters("-+.'").Pattern(word);
 var dotOrHyphenThenWord = new TextPattern().OneOfTheseCharacters("-.").Pattern(word);
 
 var email = new TextPattern()
     .Pattern(word)
-    .ZeroOrMore().Pattern(symbolThenWord)
+    .Pattern(symbolThenWord, Times.ZeroOrMore)
     .Text("@")
     .Pattern(word)
-    .ZeroOrMore().Pattern(dotOrHyphenThenWord)
+    .Pattern(dotOrHyphenThenWord, Times.ZeroOrMore)
     .Text(".")
     .Pattern(word)
-    .ZeroOrMore().Pattern(dotOrHyphenThenWord);
+    .Pattern(dotOrHyphenThenWord, Times.ZeroOrMore);
 
 email.MatchesWholeText("john.smith@example.co.uk");   // true
 email.MatchesWholeText("junk john@example.com");      // false
@@ -54,9 +54,11 @@ email.MatchesWholeText("junk john@example.com");      // false
 FluidRegex also prevents the mistakes that are easy to make:
 
 - **Text is matched as written.** `Text("a+b")` finds the text `a+b`. You do not escape anything.
-- **A count covers the whole piece.** `OneOrMore().Text("abc")` repeats `abc`, not only the `c`.
-- **A count comes before its piece.** After `OneOrMore()`, the method list shows only the pieces that a count can
-  apply to. `OneOrMore().StartOfText()` does not compile.
+- **A count goes inside the brackets of its piece.** `Digit(Times.Exactly(4))` finds 4 digits. The count cannot move
+  to a different piece by accident.
+- **A count covers the whole piece.** `Text("abc", Times.OneOrMore)` repeats `abc`, not only the `c`.
+- **A position takes no count.** `StartOfText()` has no count argument, so `StartOfText(Times.OneOrMore)` does not
+  compile.
 - **Checking input and searching text are different methods.** `MatchesWholeText` checks all of the text, so an email
   check cannot accept `"junk a@b.com junk"` by accident. `IsFoundIn` searches.
 - **`Digit()` matches only 0 to 9.** Plain `\d` also matches Arabic, Thai and other digits.
@@ -85,7 +87,7 @@ net10.0.
 1. Add `using FluidRegex;`.
 2. Start with `new TextPattern()`.
 3. Add the pieces in reading order.
-4. To repeat a piece, put a count before it: `.Exactly(4).Digit()`.
+4. To repeat a piece, give it a count as its last argument: `.Digit(Times.Exactly(4))`.
 5. Use the pattern:
    - `MatchesWholeText(text)` checks that all of the text fits the pattern, for example an email address in a form.
    - `IsFoundIn(text)` checks that the pattern is somewhere in the text.
@@ -96,7 +98,12 @@ Each call gives a new pattern. The original pattern does not change.
 
 ## Cheat sheet
 
-**Pieces.** You can put a count before each piece.
+The cheat sheet shows the methods that you use most. The
+[API reference](https://github.com/nzmattgrant/FluidRegex/blob/master/docs/api-reference.md) lists every method. The
+[design notes](https://github.com/nzmattgrant/FluidRegex/blob/master/docs/design-notes.md) give the reasons for the
+names.
+
+**Pieces.** Each piece except `EitherOf` takes a count as its last argument.
 
 | You write | Finds | Emits |
 | --- | --- | --- |
@@ -113,26 +120,32 @@ Each call gives a new pattern. The original pattern does not change.
 | `OneOfTheseCharacters(set)` | one of the characters in a `CharacterSet` | `[...]` |
 | `AnyCharacterExcept("<>")` | any character except < and > | `[^<>]` |
 | `AnyCharacterInRange('a', 'z')` | any character from a to z | `[a-z]` |
-| `EitherOf("cat", "dog")` | "cat" or "dog" | `(?:cat\|dog)` |
+| `EitherOf("cat", "dog")` | "cat" or "dog". Give two choices or more. | `(?:cat\|dog)` |
+| `EitherOf(theEndOfText, aSpace)` | what one of the patterns finds | `(?:\z\|\ )` |
 | `Pattern(otherPattern)` | a pattern that you made before | its content |
-| `SaveAs("year", otherPattern)` | a pattern, and saves its text as "year" | `(?<year>...)` |
+| `SaveTextAs("year", otherPattern)` | a pattern, and saves its text as "year" | `(?<year>...)` |
 | `SameTextAsSaved("word")` | the same text that was saved as "word" | `\k<word>` |
 | `RawRegex(@"\p{IsGreek}")` | raw .NET regex, for experts | `(?:\p{IsGreek})` |
 
-**Counts.** Put a count before the piece that it applies to.
+**Counts.** Give the count as the last argument of the piece that it applies to. Without a count, the piece is found
+one time.
 
-| You write | The next piece | Emits |
+| You write | The piece is found | Emits |
 | --- | --- | --- |
-| `Optional()` | can be missing | `?` |
-| `ZeroOrMore()` | any number of times, or not at all | `*` |
-| `OneOrMore()` | one time or more | `+` |
-| `Exactly(4)` | exactly 4 times | `{4}` |
-| `AtLeast(8)` | 8 times or more | `{8,}` |
-| `AtMost(3)` | 0 to 3 times | `{0,3}` |
-| `Between(2, 6)` | 2 to 6 times | `{2,6}` |
+| `Times.Optional` | one time, or not at all | `?` |
+| `Times.ZeroOrMore` | any number of times, or not at all | `*` |
+| `Times.OneOrMore` | one time or more | `+` |
+| `Times.Exactly(4)` | exactly 4 times | `{4}` |
+| `Times.AtLeast(8)` | 8 times or more | `{8,}` |
+| `Times.Between(2, 6)` | 2 to 6 times | `{2,6}` |
 
-A count matches as many times as possible. To match as few times as possible, add `.AsFewAsPossible()` after a count
-that can change. For example, `Text("<").OneOrMore().AsFewAsPossible().AnyCharacter().Text(">")` finds `<a>` in
+For "up to 3 times", write `Times.Between(0, 3)`. The 0 shows that the piece can be missing.
+
+To repeat an either-or, put it in a pattern first. Then give the count to `Pattern`:
+`Pattern(catOrDog, Times.OneOrMore)`.
+
+A count matches as many times as possible. To match as few times as possible, add `.AsFewAsPossible()` to a count that
+can change. For example, `Text("<").AnyCharacter(Times.OneOrMore.AsFewAsPossible()).Text(">")` finds `<a>` in
 `<a><b>`. Without `AsFewAsPossible()`, it finds all of `<a><b>`.
 
 **Positions and conditions.** These match a place in the text, not characters, so they take no count.
@@ -142,8 +155,11 @@ that can change. For example, `Text("<").OneOrMore().AsFewAsPossible().AnyCharac
 | `StartOfText()` / `EndOfText()` | at the start / end of the text | `\A` / `\z` |
 | `StartOfLine()` / `EndOfLine()` | at the start / end of a line (`\r\n`, `\n` or `\r`) | lookarounds |
 | `StartOfWord()` / `EndOfWord()` | at the start / end of a word | `\b(?=\w)` / `\b(?<=\w)` |
-| `IfFollowedBy("Y")` / `IfNotFollowedBy("Y")` | only if "Y" comes / does not come next | `(?=Y)` / `(?!Y)` |
-| `IfPrecededBy("$")` / `IfNotPrecededBy("$")` | only if "$" comes / does not come just before | `(?<=\$)` / `(?<!\$)` |
+| `TextAfterHereStartsWith("Y")` / `TextAfterHereDoesNotStartWith("Y")` | only if the text after this place starts / does not start with "Y" | `(?=Y)` / `(?!Y)` |
+| `TextBeforeHereEndsWith("$")` / `TextBeforeHereDoesNotEndWith("$")` | only if the text before this place ends / does not end with "$" | `(?<=\$)` / `(?<!\$)` |
+
+A condition checks the text at the place where you write it. Write `TextBeforeHereEndsWith("$")` before the digits
+that it checks: `TextBeforeHereEndsWith("$").Digit(Times.OneOrMore)`.
 
 **Settings.**
 
@@ -176,18 +192,18 @@ var hostCharacters = new CharacterSet()
 var pathCharacters = new CharacterSet()
     .CharactersInRange('a', 'z').CharactersInRange('A', 'Z').Digits()
     .Characters("-@:%_+.~#()?&/=");
-var path = new TextPattern().ZeroOrMore().OneOfTheseCharacters(pathCharacters);
+var path = new TextPattern().OneOfTheseCharacters(pathCharacters, Times.ZeroOrMore);
 
 var url = new TextPattern()
     .Text("http")
-    .Optional().Text("s")
+    .Text("s", Times.Optional)
     .Text("://")
-    .Optional().Text("www.")
-    .Between(2, 256).OneOfTheseCharacters(hostCharacters)
+    .Text("www.", Times.Optional)
+    .OneOfTheseCharacters(hostCharacters, Times.Between(2, 256))
     .Text(".")
-    .Between(2, 6).AnyCharacterInRange('a', 'z')
+    .AnyCharacterInRange('a', 'z', Times.Between(2, 6))
     .EndOfWord()
-    .SaveAs("path", path);
+    .SaveTextAs("path", path);
 // https?://(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b(?<=\w)(?<path>[-a-zA-Z0-9@:%_+.~#()?&/=]*)
 
 url.FindFirst("Go to https://www.example.com/path?q=1")?.Saved("path");   // "/path?q=1"
@@ -196,15 +212,15 @@ url.FindFirst("Go to https://www.example.com/path?q=1")?.Saved("path");   // "/p
 ### ISO date with saved parts
 
 ```csharp
-var fourDigits = new TextPattern().Exactly(4).Digit();
-var twoDigits = new TextPattern().Exactly(2).Digit();
+var fourDigits = new TextPattern().Digit(Times.Exactly(4));
+var twoDigits = new TextPattern().Digit(Times.Exactly(2));
 
 var isoDate = new TextPattern()
-    .SaveAs("year", fourDigits)
+    .SaveTextAs("year", fourDigits)
     .Text("-")
-    .SaveAs("month", twoDigits)
+    .SaveTextAs("month", twoDigits)
     .Text("-")
-    .SaveAs("day", twoDigits);
+    .SaveTextAs("day", twoDigits);
 // (?<year>[0-9]{4})-(?<month>[0-9]{2})-(?<day>[0-9]{2})
 
 var found = isoDate.FindFirst("Due on 2026-10-12.");
@@ -216,13 +232,13 @@ found?.Saved("month");   // "10"
 
 ```csharp
 var usPhone = new TextPattern()
-    .Optional().Text("(")
-    .Exactly(3).Digit()
-    .Optional().Text(")")
-    .Optional().OneOfTheseCharacters("-. ")
-    .Exactly(3).Digit()
-    .Optional().OneOfTheseCharacters("-. ")
-    .Exactly(4).Digit();
+    .Text("(", Times.Optional)
+    .Digit(Times.Exactly(3))
+    .Text(")", Times.Optional)
+    .OneOfTheseCharacters("-. ", Times.Optional)
+    .Digit(Times.Exactly(3))
+    .OneOfTheseCharacters("-. ", Times.Optional)
+    .Digit(Times.Exactly(4));
 // \(?[0-9]{3}\)?[-. ]?[0-9]{3}[-. ]?[0-9]{4}
 
 usPhone.MatchesWholeText("(555) 123-4567");   // true
@@ -236,7 +252,7 @@ var catsOrDogs = new TextPattern()
     .IgnoringCase()
     .StartOfWord()
     .EitherOf("cat", "dog")
-    .Optional().Text("s")
+    .Text("s", Times.Optional)
     .EndOfWord();
 // \b(?=\w)(?:cat|dog)s?\b(?<=\w)
 
@@ -244,15 +260,33 @@ catsOrDogs.IsFoundIn("I have two DOGS");   // true
 catsOrDogs.IsFoundIn("concatenate");       // false
 ```
 
+### Either-or with a position
+
+One of a, b or c, then the text "x", then the end of the text or a space:
+
+```csharp
+var theEndOfText = new TextPattern().EndOfText();
+var aSpace = new TextPattern().Text(" ");
+
+var abcThenX = new TextPattern()
+    .OneOfTheseCharacters("abc")
+    .Text("x")
+    .EitherOf(theEndOfText, aSpace);
+// [abc]x(?:\z|\ )
+
+abcThenX.IsFoundIn("tax rebate");   // true
+abcThenX.IsFoundIn("taxi");         // false
+```
+
 ### Repeated words
 
 ```csharp
-var aWord = new TextPattern().OneOrMore().Letter();
+var aWord = new TextPattern().Letter(Times.OneOrMore);
 
 var repeatedWord = new TextPattern()
     .StartOfWord()
-    .SaveAs("word", aWord)
-    .OneOrMore().Whitespace()
+    .SaveTextAs("word", aWord)
+    .Whitespace(Times.OneOrMore)
     .SameTextAsSaved("word")
     .EndOfWord();
 // \b(?=\w)(?<word>\p{L}+)\s+\k<word>\b(?<=\w)
@@ -263,13 +297,13 @@ repeatedWord.FindFirst("Paris in the the spring")?.Saved("word");   // "the"
 ### Password rule
 
 ```csharp
-var aDigitSomewhereAhead = new TextPattern().ZeroOrMore().AnyCharacter().Digit();
-var aLowercaseLetterSomewhereAhead = new TextPattern().ZeroOrMore().AnyCharacter().AnyCharacterInRange('a', 'z');
+var anythingThenADigit = new TextPattern().AnyCharacter(Times.ZeroOrMore).Digit();
+var anythingThenALowercaseLetter = new TextPattern().AnyCharacter(Times.ZeroOrMore).AnyCharacterInRange('a', 'z');
 
 var password = new TextPattern()
-    .IfFollowedBy(aDigitSomewhereAhead)
-    .IfFollowedBy(aLowercaseLetterSomewhereAhead)
-    .AtLeast(8).AnyCharacter();
+    .TextAfterHereStartsWith(anythingThenADigit)
+    .TextAfterHereStartsWith(anythingThenALowercaseLetter)
+    .AnyCharacter(Times.AtLeast(8));
 // (?=[\s\S]*[0-9])(?=[\s\S]*[a-z])[\s\S]{8,}
 
 password.MatchesWholeText("passw0rd");   // true
@@ -279,11 +313,11 @@ password.MatchesWholeText("password");   // false
 ### Find and replace
 
 ```csharp
-var fourDigitsAndHyphen = new TextPattern().Exactly(4).Digit().Text("-");
+var fourDigitsAndHyphen = new TextPattern().Digit(Times.Exactly(4)).Text("-");
 
 var cardNumber = new TextPattern()
-    .Exactly(3).Pattern(fourDigitsAndHyphen)
-    .Exactly(4).Digit();
+    .Pattern(fourDigitsAndHyphen, Times.Exactly(3))
+    .Digit(Times.Exactly(4));
 // (?:[0-9]{4}-){3}[0-9]{4}
 
 cardNumber.ReplaceAll("Card 1234-5678-9012-3456 was used.", "[hidden]");   // "Card [hidden] was used."
@@ -291,14 +325,15 @@ cardNumber.ReplaceAll("Card 1234-5678-9012-3456 was used.", "[hidden]");   // "C
 
 ## Escaping and safety
 
-- **Text arguments are matched as written.** This applies to `Text`, `EitherOf`, the `If...` conditions,
-  `OneOfTheseCharacters` and `AnyCharacterExcept`. The replacement in `ReplaceAll` is also used as written.
+- **Text arguments are matched as written.** This applies to `Text`, `EitherOf`, the `TextAfterHere...` and
+  `TextBeforeHere...` conditions, `OneOfTheseCharacters` and `AnyCharacterExcept`. The replacement in `ReplaceAll` is
+  also used as written.
 - **Character strings never make ranges.** A string such as `"a-z"` throws. It does not quietly mean three
   characters. For a range, use `AnyCharacterInRange` or `CharacterSet.CharactersInRange`.
 - **`RawRegex` is for experts.** FluidRegex does not escape it. FluidRegex always puts it in `(?:...)`, so a `|` or an
   inline option in it cannot change the rest of the pattern.
 - **Problems with a finished pattern are reported when you first use the pattern.** The message quotes the pattern.
-  Examples are `SameTextAsSaved("word")` before `SaveAs("word", ...)`, a name that is never saved, and invalid raw
+  Examples are `SameTextAsSaved("word")` before `SaveTextAs("word", ...)`, a name that is never saved, and invalid raw
   regex. `ToString()` never throws.
 - **Use a time limit for untrusted input.** Some patterns become very slow on some input. A time limit stops the search:
   `new TextPattern().WithTimeLimit(TimeSpan.FromSeconds(1))`.
